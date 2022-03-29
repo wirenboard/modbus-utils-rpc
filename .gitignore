@@ -1,0 +1,7 @@
+/.devcontainer/
+/.devcontainer/*
+/.vscode
+/.vscode*
+/env/
+/mqtt-rpc
+/uModbus
