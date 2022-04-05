@@ -15,8 +15,8 @@ from umodbus.exceptions import ModbusError
 
 class ResultCode(IntEnum):
     OK = 0
-    USER_INPUT_ERROR = 1
-    OPERATION_ERROR = 2
+    OPERATION_ERROR = 1
+    USER_INPUT_ERROR = 2
 
 
 def hex_str(data):
@@ -25,14 +25,14 @@ def hex_str(data):
     return hex_data_list
 
 
-def tcp_path_create(args):
+def create_tcp_path(args):
     data = {}
     data['ip'] = args.ip
     data['port'] = args.port
     return data
 
 
-def rtu_path_create(args):
+def create_rtu_path(args):
     data = {}
     data['path'] = args.serialport
     return data
@@ -42,7 +42,7 @@ def rtu_path_create(args):
 def mqtt_client(name):
     try:
         client = mosquitto.Mosquitto(name)
-        client.connect("127.0.0.1", 1883)
+        client.connect("192.168.10.6", 1883)
         client.loop_start()
         yield client
     except ConnectionRefusedError:
@@ -93,7 +93,7 @@ def create_message(lib, function, slave_address, start_address, read_no, write_d
     return msg_str, resp_size
 
 
-def request_handle(args):
+def process_request(args):
     args.func_type = int(args.func_type, 16)
 
     try:
@@ -163,12 +163,12 @@ def main(argv=sys.argv):
     tcp_subparser.add_argument("port", type=int)
     tcp_subparser.add_argument("ip", type=str)
     tcp_subparser.set_defaults(
-        func=request_handle, lib=tcp, path_create=tcp_path_create)
+        func=process_request, lib=tcp, path_create=create_tcp_path)
 
     rtu_subparser = subparsers.add_parser("rtu", help="ModbusRTU")
     rtu_subparser.add_argument("serialport", type=str)
     rtu_subparser.set_defaults(
-        func=request_handle, lib=rtu, path_create=rtu_path_create)
+        func=process_request, lib=rtu, path_create=create_rtu_path)
 
     options = parser.parse_args()
 
@@ -181,4 +181,4 @@ def main(argv=sys.argv):
 
 
 if __name__ == "__main__":
-    sys.exit(int(main(sys.argv)))
+    sys.exit(main(sys.argv))
