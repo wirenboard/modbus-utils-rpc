@@ -234,7 +234,7 @@ def set_write_data(parser, unknown_options, options):
     for x in unknown_options:
         if x.startswith('-'):
             parser.error('Unknnown argument' + x)
-    getattr(options, 'write_data').append(x)
+        getattr(options, 'write_data').append(x)
 
 
 def main(argv=sys.argv):
