@@ -8,31 +8,16 @@ class RPCClientCallError(Exception):
     pass
 
 
-class UModbusError(Exception):
+class RPCUModbusParametersError(Exception):
     """Rises if umodbus rises an exception after create message attempt"""
     pass
 
 
-class RPCWrongParamSetError(Exception):
-    """ Rises if RPC result code is RPC_WRONG_PARAM_SET"""
-    pass
+class RPCError(Exception):
+    """Rises if RPC request response is not successful"""
 
-
-class RPCWrongParamValueError(Exception):
-    """ Rises if RPC result code is RPC_WRONG_PARAM_VALUE"""
-    pass
-
-
-class RPCWrongPortError(Exception):
-    """ Rises if RPC result code is RPC_WRONG_PORT"""
-    pass
-
-
-class RPCWrongIOError(Exception):
-    """ Rises if RPC result code is RPC_WRONG_IO"""
-    pass
-
-
-class RPCWrongRespLngthError(Exception):
-    """ Rises if RPC result code is RPC_WRONG_RESP_LNGTH"""
-    pass
+    def __init__(self, result_code, port_path, rpc_parameters, rpc_response):
+        self.result_code = result_code
+        self.port_path = port_path
+        self.rpc_parameters = rpc_parameters
+        self.rpc_response = rpc_response
