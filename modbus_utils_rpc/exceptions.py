@@ -1,15 +1,20 @@
+class ModbusParametersError(Exception):
+    """Rises if umodbus rises an exception after create message attempt"""
+    pass
+
+
 class BrokerConnectionError(Exception):
     """Rises if there is no connection with broker"""
     pass
 
 
-class RPCClientCallError(Exception):
-    """Rises if mqttrpc.library rises an exception"""
+class RPCClientTimeoutError(Exception):
+    """Rises if mqttrpc.library rises Timeout exception"""
     pass
 
 
-class RPCUModbusParametersError(Exception):
-    """Rises if umodbus rises an exception after create message attempt"""
+class ModbusParseError(Exception):
+    """Rises if umodbus rises an exception after parse response attempt"""
     pass
 
 
