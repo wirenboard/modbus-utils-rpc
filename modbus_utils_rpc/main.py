@@ -15,8 +15,7 @@ from umodbus.client.serial import rtu
 
 from modbus_utils_rpc import exceptions
 
-MOSQUITTO_IP = "192.168.10.6"
-MOSQUITTO_PORT = 1883
+DEFAULT_BROKER = {'ip': "127.0.0.1", 'port': 1883}
 
 logger = logging.getLogger(__name__)
 
@@ -52,28 +51,32 @@ def parse_parity_or_tcpport(data):
             raise error
 
 
+def parse_broker_host(data):
+    host = data.split(':')
+    return {'ip': host[0], 'port': int(host[1])}
+
+
 def get_tcp_params(args):
     return {'ip': args.serialport_host, 'port': args.parity_port}
 
 
 def get_rtu_params(args):
-    # TODO: add RTU mode support to be able to work with ports unknown to wb-serial
     return {'path': args.serialport_host}
 
 
 def create_modbus_message(lib, function, slave_address, address_decrement,
                           start_address, read_count, write_data):
-    """Fuction accept modbus params and return tuple:
+    """Function accept modbus params and return tuple:
     string type message with expected response size
 
     Returns:
-        string: mesage
+        string: message
         int: expected response size
     """
 
     try:
         if address_decrement:
-            slave_address -= 1
+            start_address -= 1
 
         if function in (functions.WRITE_SINGLE_COIL,
                         functions.WRITE_SINGLE_REGISTER,
@@ -131,12 +134,12 @@ def create_rpc_request(args, get_port_params, modbus_message, response_size):
 
 
 @contextmanager
-def mqtt_client(name):
+def mqtt_client(name, broker=DEFAULT_BROKER):
     try:
         client = mosquitto.Mosquitto(name)
-        logger.debug('Connecting with broker %s:%s',
-                     MOSQUITTO_IP, MOSQUITTO_PORT)
-        client.connect(MOSQUITTO_IP, MOSQUITTO_PORT)
+        logger.debug('Connecting to broker %s:%s',
+                     broker['ip'], broker['port'])
+        client.connect(broker['ip'], broker['port'])
         client.loop_start()
         yield client
     except (TimeoutError, ConnectionRefusedError) as error:
@@ -146,8 +149,8 @@ def mqtt_client(name):
         client.disconnect()
 
 
-def send_message(message, timeout):
-    with mqtt_client("modbus-utils-rpc-%d" % os.getpid()) as client:
+def send_message(broker, message, timeout):
+    with mqtt_client("modbus-utils-rpc-%d" % os.getpid(), broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
@@ -174,7 +177,7 @@ def parse_rpc_response(args, get_port_params, request, response):
     logger.debug('Result code: %d', result_code)
 
     if result_code != RPCResultCode.RPC_OK:
-        print('ERROR occured')
+        print('ERROR occurred')
         raise exceptions.RPCError(
             result_code, get_port_params(args),
             request, response)
@@ -210,7 +213,6 @@ def parse_modbus_response(lib, function, request, response):
         elif function in (functions.WRITE_SINGLE_COIL,
                           functions.WRITE_SINGLE_REGISTER):
             print('SUCCESS: written 1 element')
-            print('\rNew value:', ''.join("0x{:02x}".format(data)))
         else:
             print('SUCCESS: Coils/Registers written:', data)
 
@@ -223,6 +225,7 @@ def handle_rpcumodbusparameterserror(args):
     logger.error('\tFunction type %d', args.func_type)
     logger.error('\tSlave address % d', args.slave_addr)
     logger.error('\tStart address % d', args.start_addr)
+    logger.error('\tStart address decrement: %r', args.address_decrement)
     logger.error('\tRead count % d', args.read_count)
     logger.error('\tWrite data % s', tuple(args.write_data),
                  exc_info=(logger.level <= logging.DEBUG))
@@ -242,7 +245,7 @@ def handle_rpcclienttimeouterror(timeout):
 
 
 def handle_rpcumodbusparseerror(response):
-    logger.error('Error occured while parsing modbus response:')
+    logger.error('Error occurred while parsing modbus response:')
     logger.error('%s', "".join(
         "[{:02x}]".format(x) for x in bytearray.fromhex(
             response)))
@@ -292,7 +295,8 @@ def process_request(args, lib, get_port_params):
         rpc_request = create_rpc_request(
             args, get_port_params, modbus_msg_str, modbus_resp_size)
 
-        rpc_response = send_message(rpc_request, args.timeout)
+        rpc_response = send_message(
+            args.mqtt_broker, rpc_request, args.timeout)
 
         modbus_resp_str = parse_rpc_response(
             args, get_port_params, rpc_request, rpc_response)
@@ -316,18 +320,10 @@ def process_request(args, lib, get_port_params):
     return result_code
 
 
-def set_write_data(parser, unknown_options, options):
-    for x in unknown_options:
-        if x.startswith('-'):
-            parser.error('Unknnown argument' + x)
-
-        try:
-            getattr(options, 'write_data').append(parse_hex_or_dec(x))
-        except ValueError as error:
-            logger.error(
-                "Invalid value %s for write_data option. Set hex or dec numbers",  x)
-            raise error
-
+# TODO: Now modbus-utils-rpc can only send messages to ports added to mqtt-serial.
+# In RTU mode options -b, -d, -s, -p are ignored at the moment.
+# We should add to mqtt-serial ability to open a port that is not in the configuration.
+# Also we should start use ignored options.
 
 def main(argv=sys.argv):
     parser = argparse.ArgumentParser()
@@ -353,7 +349,7 @@ def main(argv=sys.argv):
                         dest="func_type", required=True)
     parser.add_argument("-o", help="Timeout, ms", type=parse_hex_or_dec,
                         default=1000, dest="timeout", required=False)
-    parser.add_argument("-0", help="Slave address decrement",
+    parser.add_argument("-0", help="First reg's address decrement",
                         default=False, dest="address_decrement",
                         required=False, action='store_true')
 
@@ -377,13 +373,28 @@ def main(argv=sys.argv):
                         type=parse_parity_or_tcpport, dest="parity_port",
                         metavar='parity|port', required=False)
 
+    parser.add_argument('--broker', help='Mqtt broker IP:PORT', dest='mqtt_broker',
+                        default=DEFAULT_BROKER, type=parse_broker_host, required=False)
+
     parser.add_argument('serialport_host', help="Serial port path or host IP",
                         type=str, metavar='serialport|host')
     parser.add_argument('write_data', nargs='*',
                         type=parse_hex_or_dec, help="Data to write")
 
     options, unknown_options = parser.parse_known_args()
-    set_write_data(parser, unknown_options, options)
+
+    error_options = []
+    for x in unknown_options:
+        try:
+            options.write_data.append(parse_hex_or_dec(x))
+        except ValueError:
+            error_options.append(x)
+
+    if len(error_options) != 0:
+        logger.error(
+            "Invalid values for write_data option. Set hex or dec numbers")
+        logger.error("\rInvalid values: %s", error_options)
+        return ResultCode.USER_INPUT_ERROR
 
     if options.debug:
         stream_handler = logging.StreamHandler(sys.stderr)
