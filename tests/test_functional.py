@@ -14,6 +14,7 @@ test_modbus_parameters = [
         [],
         "000100000001fc1b",
         6,
+        False,
     ),
     (
         main.rtu,
@@ -25,6 +26,7 @@ test_modbus_parameters = [
         [],
         "f702ffff0001ad78",
         6,
+        False,
     ),
     (
         main.rtu,
@@ -36,6 +38,7 @@ test_modbus_parameters = [
         [],
         "00030000007d843a",
         255,
+        False,
     ),
     (
         main.rtu,
@@ -47,6 +50,7 @@ test_modbus_parameters = [
         [],
         "f704fffe000234b9",
         9,
+        False,
     ),
     (
         main.rtu,
@@ -58,6 +62,7 @@ test_modbus_parameters = [
         [255],
         "0005ffffff008dcf",
         8,
+        False,
     ),
     (
         main.rtu,
@@ -69,6 +74,7 @@ test_modbus_parameters = [
         [22950],
         "f706fffe59a67692",
         8,
+        False,
     ),
     (
         main.rtu,
@@ -80,6 +86,7 @@ test_modbus_parameters = [
         [0, 255, 0, 100, 0, 50],
         "000f00000006012adf45",
         8,
+        False,
     ),
     (
         main.rtu,
@@ -91,6 +98,7 @@ test_modbus_parameters = [
         [22950, 15406, 4658],
         "f710fffd00030659a63c2e1232ed65",
         8,
+        False,
     ),
     (
         main.tcp,
@@ -102,6 +110,7 @@ test_modbus_parameters = [
         [],
         "000000000006000100000001",
         10,
+        False,
     ),
     (
         main.tcp,
@@ -113,6 +122,7 @@ test_modbus_parameters = [
         [],
         "000000000006f702ffff0001",
         10,
+        False,
     ),
     (
         main.tcp,
@@ -124,6 +134,7 @@ test_modbus_parameters = [
         [],
         "00000000000600030000007d",
         259,
+        False,
     ),
     (
         main.tcp,
@@ -135,6 +146,7 @@ test_modbus_parameters = [
         [],
         "000000000006f704fffe0002",
         13,
+        False,
     ),
     (
         main.tcp,
@@ -146,6 +158,7 @@ test_modbus_parameters = [
         [255],
         "0000000000060005ffffff00",
         12,
+        False,
     ),
     (
         main.tcp,
@@ -157,6 +170,7 @@ test_modbus_parameters = [
         [22950],
         "000000000006f706fffe59a6",
         12,
+        False,
     ),
     (
         main.tcp,
@@ -168,6 +182,7 @@ test_modbus_parameters = [
         [0, 255, 0, 100, 0, 50],
         "000000000008000f00000006012a",
         12,
+        False,
     ),
     (
         main.tcp,
@@ -179,18 +194,19 @@ test_modbus_parameters = [
         [22950, 15406, 4658],
         "00000000000df710fffd00030659a63c2e1232",
         12,
+        False,
     ),
-    pytest.param(main.rtu, 0x07, 0, False, 0, 0, [], "", 0, marks=pytest.mark.xfail),
-    pytest.param(main.rtu, 0x01, 250, False, 0, 0, [], "", 0, marks=pytest.mark.xfail),
-    pytest.param(main.rtu, 0x01, 0, False, 65536, 0, [], "", 0, marks=pytest.mark.xfail),
-    pytest.param(main.rtu, 0x01, 0, True, 0, 0, [], "", 0, marks=pytest.mark.xfail),
-    pytest.param(main.rtu, 0x01, 0, True, 0, 126, [], "", 0, marks=pytest.mark.xfail),
-    pytest.param(main.rtu, 0x01, 0, True, 0, 0, [], "", 0, marks=pytest.mark.xfail),
+    (main.rtu, 0x07, 0, False, 0, 0, [], "", 0, True),
+    (main.rtu, 0x01, 250, False, 0, 0, [], "", 0, True),
+    (main.rtu, 0x01, 0, False, 65536, 0, [], "", 0, True),
+    (main.rtu, 0x01, 0, True, 0, 0, [], "", 0, True),
+    (main.rtu, 0x01, 0, True, 0, 126, [], "", 0, True),
+    (main.rtu, 0x01, 0, True, 0, 0, [], "", 0, True),
 ]
 
 
 @pytest.mark.parametrize(
-    "lib, function, slave_address, address_decrement, start_address, read_count, write_data, expected_message, expected_length",
+    "lib, function, slave_address, address_decrement, start_address, read_count, write_data, expected_message, expected_length,must_fail",
     test_modbus_parameters,
 )
 def test_create_modbus_message(
@@ -203,16 +219,23 @@ def test_create_modbus_message(
     write_data,
     expected_message,
     expected_length,
+    must_fail,
 ):
 
-    message, length = main.create_modbus_message(
-        lib, function, slave_address, address_decrement, start_address, read_count, write_data
-    )
+    if must_fail:
+        with pytest.raises(Exception):
+            message, length = main.create_modbus_message(
+                lib, function, slave_address, address_decrement, start_address, read_count, write_data
+            )
+    else:
+        message, length = main.create_modbus_message(
+            lib, function, slave_address, address_decrement, start_address, read_count, write_data
+        )
 
-    if lib == main.rtu:
-        assert (expected_message, expected_length) == (message, length)
-    elif lib == main.tcp:
-        assert (expected_message[4:], expected_length) == (message[4:], length)
+        if lib == main.rtu:
+            assert (expected_message, expected_length) == (message, length)
+        elif lib == main.tcp:
+            assert (expected_message[4:], expected_length) == (message[4:], length)
 
 
 test_rpc_param = [
@@ -285,33 +308,50 @@ def test_send_message(mocker, send_message_context):
 
 
 test_parse_rpc_params = [
-    ({"result_code": 0, "response": "response", "error_msg": "Error"}),
-    pytest.param({"result_code": -1, "response": "response", "error_msg": "Error"}, marks=pytest.mark.xfail),
-    pytest.param(
-        {"result_code": -100, "response": "response", "error_msg": "Error"}, marks=pytest.mark.xfail
-    ),
+    ({"result_code": 0, "response": "modbus_response", "error_msg": "Error"}, False),
+    ({"result_code": -1, "response": "modbus_response", "error_msg": "Error"}, True),
+    ({"result_code": -100, "response": "modbus_response", "error_msg": "Error"}, True),
 ]
 
 
-@pytest.mark.parametrize("response", test_parse_rpc_params)
-def test_parse_rpc_response(response):
-    assert response["response"] == main.parse_rpc_response(
-        Namespace(**{"serialport_host": "rtu_path"}), main.get_rtu_params, "request", response
-    )
+@pytest.mark.parametrize("rpc_response, must_fail", test_parse_rpc_params)
+def test_parse_rpc_response(rpc_response, must_fail):
+
+    if must_fail:
+        with pytest.raises(Exception):
+            modbus_response = main.parse_rpc_response(
+                Namespace(**{"serialport_host": "rtu_path"}),
+                main.get_rtu_params,
+                "request",
+                rpc_response,
+            )
+    else:
+        modbus_response = main.parse_rpc_response(
+            Namespace(**{"serialport_host": "rtu_path"}),
+            main.get_rtu_params,
+            "request",
+            rpc_response,
+        )
+
+        assert rpc_response["response"] == modbus_response
 
 
 test_modbus_response_params = [
-    (main.rtu, 0x01, "1604010e000152d2", "160402fe348c84"),
-    pytest.param(main.rtu, 0x01, "1604010e000152d2", "160402fe348c80", marks=pytest.mark.xfail),
+    (main.rtu, 0x01, "1604010e000152d2", "160402fe348c84", False),
+    (main.rtu, 0x01, "1604010e000152d2", "160402fe348c80", True),
 ]
 
 
-@pytest.mark.parametrize("lib, function, modrequest, response", test_modbus_response_params)
-def test_parse_modbus_response(lib, function, modrequest, response):
-    assert main.parse_modbus_response(lib, function, modrequest, response) is None
+@pytest.mark.parametrize("lib, function, modrequest, response, must_fail", test_modbus_response_params)
+def test_parse_modbus_response(lib, function, modrequest, response, must_fail):
+    if must_fail:
+        with pytest.raises(Exception):
+            main.parse_modbus_response(lib, function, modrequest, response)
+    else:
+        main.parse_modbus_response(lib, function, modrequest, response)
 
 
-test_argv_params = [
+test_argv_params_positive = [
     (
         ["--debug", "-mrtu", "-pnone", "-b9600", "-s2", "-a22", "/dev/ttyRS485-1", "-t0x06", "-r0x78", "10"],
         Namespace(
@@ -375,13 +415,24 @@ test_argv_params = [
         ),
         [],
     ),
-    pytest.param(["-r5", "-pnone"], [], [], marks=pytest.mark.xfail),
-    pytest.param(["-mtcp", "-t1", "192.168.10.4", "abc", "def"], [], [], marks=pytest.mark.xfail),
-    pytest.param(["-mascii"], [], [], marks=pytest.mark.xfail),
 ]
 
 
-@pytest.mark.parametrize("argv, expected_options, expected_error_options", test_argv_params)
-def test_parse_options(argv, expected_options, expected_error_options):
+test_argv_params_negative = [
+    (["-r5", "-pnone"], [], []),
+    (["-mtcp", "-t1", "192.168.10.4", "abc", "def"], [], []),
+    (["-mascii"], [], []),
+]
+
+
+@pytest.mark.parametrize("argv, expected_options, expected_error_options", test_argv_params_positive)
+def test_parse_options_positive(argv, expected_options, expected_error_options):
+    options, error_options = main.parse_options(argv)
+    assert (options, error_options) == (expected_options, expected_error_options)
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize("argv, expected_options, expected_error_options", test_argv_params_negative)
+def test_parse_options_negative(argv, expected_options, expected_error_options):
     options, error_options = main.parse_options(argv)
     assert (options, error_options) == (expected_options, expected_error_options)
