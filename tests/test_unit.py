@@ -2,6 +2,7 @@ from argparse import Namespace
 
 import pytest
 from modbus_utils_rpc import main
+from pytest_mock import mocker
 
 test_modbus_parameters = [
     (
@@ -353,7 +354,19 @@ def test_parse_modbus_response(lib, function, modrequest, response, must_fail):
 
 test_argv_params_positive = [
     (
-        ["--debug", "-mrtu", "-pnone", "-b9600", "-s2", "-a22", "/dev/ttyRS485-1", "-t0x06", "-r0x78", "10"],
+        [
+            "test",
+            "--debug",
+            "-mrtu",
+            "-pnone",
+            "-b9600",
+            "-s2",
+            "-a22",
+            "/dev/ttyRS485-1",
+            "-t0x06",
+            "-r0x78",
+            "10",
+        ],
         Namespace(
             debug=True,
             mode="rtu",
@@ -374,7 +387,7 @@ test_argv_params_positive = [
         [],
     ),
     (
-        ["-mtcp", "-t1", "192.168.10.4", "-p1000", "-r5", "-0", "-o100"],
+        ["test", "-mtcp", "-t1", "192.168.10.4", "-p1000", "-r5", "-0", "-o100"],
         Namespace(
             debug=False,
             mode="tcp",
@@ -395,7 +408,7 @@ test_argv_params_positive = [
         [],
     ),
     (
-        ["-mrtu", "-r10", "/dev/ttyRS485-1", "-a22", "-t0x05", "--broker", "192.168.10.6:1883"],
+        ["test", "-mrtu", "-r10", "/dev/ttyRS485-1", "-a22", "-t0x05", "--broker", "192.168.10.6:1883"],
         Namespace(
             debug=False,
             mode="rtu",
@@ -419,20 +432,99 @@ test_argv_params_positive = [
 
 
 test_argv_params_negative = [
-    (["-r5", "-pnone"], [], []),
-    (["-mtcp", "-t1", "192.168.10.4", "abc", "def"], [], []),
-    (["-mascii"], [], []),
+    (["test", "-r5", "-pnone"], [], []),
+    (["test", "-mtcp", "-t1", "192.168.10.4", "abc", "def"], [], []),
+    (["test", "-mascii"], [], []),
 ]
 
 
 @pytest.mark.parametrize("argv, expected_options, expected_error_options", test_argv_params_positive)
 def test_parse_options_positive(argv, expected_options, expected_error_options):
-    options, error_options = main.parse_options(argv)
+    options, error_options = main.parse_options(argv[1:])
     assert (options, error_options) == (expected_options, expected_error_options)
 
 
 @pytest.mark.xfail
 @pytest.mark.parametrize("argv, expected_options, expected_error_options", test_argv_params_negative)
 def test_parse_options_negative(argv, expected_options, expected_error_options):
-    options, error_options = main.parse_options(argv)
+    options, error_options = main.parse_options(argv[1:])
     assert (options, error_options) == (expected_options, expected_error_options)
+
+
+@pytest.fixture(params=test_argv_params_positive)
+def main_context(request):
+    return request.param
+
+
+def test_main(mocker, main_context):
+    test_argv = main_context[0]
+    test_options = main_context[1]
+
+    test_modbus_message = [0x01, 0x02, 0x03]
+    test_response_size = 5
+    test_rpc_request = {"message": "request"}
+    test_rpc_response = {"message": "response"}
+    test_modbus_response = [0x04, 0x05, 0x06]
+
+    def parse_options(argv):
+        assert argv == test_argv[1:]
+        return test_options, []
+
+    def create_modbus_message(
+        lib, function, slave_address, address_decrement, start_address, read_count, write_data
+    ):
+        if test_options.mode == "rtu":
+            assert lib == main.rtu
+        else:
+            assert lib == main.tcp
+        assert function == test_options.func_type
+        assert slave_address == test_options.slave_addr
+        assert address_decrement == test_options.address_decrement
+        assert start_address == test_options.start_addr
+        assert read_count == test_options.read_count
+        assert write_data == test_options.write_data
+        return test_modbus_message, test_response_size
+
+    def create_rpc_request(args, get_port_params, modbus_message, response_size):
+        assert args == test_options
+        if test_options.mode == "rtu":
+            assert get_port_params == main.get_rtu_params
+        else:
+            assert get_port_params == main.get_tcp_params
+        assert modbus_message == test_modbus_message
+        assert response_size == test_response_size
+        return test_rpc_request
+
+    def send_message(broker, message, timeout):
+        assert broker == test_options.mqtt_broker
+        assert message == test_rpc_request
+        assert timeout == test_options.timeout
+        return test_rpc_response
+
+    def parse_rpc_response(args, get_port_params, request, response):
+        assert args == test_options
+        if test_options.mode == "rtu":
+            assert get_port_params == main.get_rtu_params
+        else:
+            assert get_port_params == main.get_tcp_params
+        assert request == test_rpc_request
+        assert response == test_rpc_response
+        return test_modbus_response
+
+    def parse_modbus_response(lib, function, request, response):
+        if test_options.mode == "rtu":
+            assert lib == main.rtu
+        else:
+            assert lib == main.tcp
+        assert function == test_options.func_type
+        assert request == test_modbus_message
+        assert response == test_modbus_response
+
+    mocker.patch("modbus_utils_rpc.main.parse_options", parse_options)
+    mocker.patch("modbus_utils_rpc.main.create_modbus_message", create_modbus_message)
+    mocker.patch("modbus_utils_rpc.main.create_rpc_request", create_rpc_request)
+    mocker.patch("modbus_utils_rpc.main.send_message", send_message)
+    mocker.patch("modbus_utils_rpc.main.parse_rpc_response", parse_rpc_response)
+    mocker.patch("modbus_utils_rpc.main.parse_modbus_response", parse_modbus_response)
+
+    main.main(test_argv)
