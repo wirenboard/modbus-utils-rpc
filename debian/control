@@ -10,3 +10,8 @@ Package: python3-modbus-client-rpc
 Architecture: all
 Depends: python3, ${misc:Depends}, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt (<1.5.0), python3-mqttrpc(>=1.1.2)
 Description: Wiren Board modbus utility using RPC (python 3)
+
+Package: python3-modbus-scanner-rpc
+Architecture: all
+Depends: python3, ${misc:Depends}, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt (<1.5.0), python3-mqttrpc(>=1.1.2)
+Description: Wiren Board modbus scanner using RPC (python 3)
