@@ -6,12 +6,7 @@ X-Python-Version: >= 3.5
 Build-Depends: python3, python3-setuptools, debhelper (>= 9), dh-python, python3-pytest, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt (<1.5.0), python3-mqttrpc(>=1.1.2), python3-six, python3-pytest-mock
 Standards-Version: 3.9.1
 
-Package: python3-modbus-client-rpc
+Package: python3-modbus-utils-rpc
 Architecture: all
 Depends: python3, ${misc:Depends}, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt (<1.5.0), python3-mqttrpc(>=1.1.2)
 Description: Wiren Board modbus utility using RPC (python 3)
-
-Package: python3-modbus-scanner-rpc
-Architecture: all
-Depends: python3, ${misc:Depends}, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt (<1.5.0), python3-mqttrpc(>=1.1.2)
-Description: Wiren Board modbus scanner using RPC (python 3)
