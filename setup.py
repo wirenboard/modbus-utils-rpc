@@ -8,6 +8,6 @@ setup(name="modbus-utils-rpc",
       author_email="ekaterina.volkova@wirenboard.ru",
       description="Wiren Board modbus utility using RPC",
       url="https://github.com/wirenboard/modbus-utils-rpc",
-      packages=['modbus_utils_rpc'],
+      packages=['modbus_client_rpc','modbus_scanner_rpc'],
       license='MIT'
       )

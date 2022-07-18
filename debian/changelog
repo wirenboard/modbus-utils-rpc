@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.1.0) stable; urgency=medium
+
+  * Add modbus-scanner package
+
+ -- Ekaterina Volkova <ekaterina.volkova@wirenboard.com>  Wed, 13 Jul 2022 14:36:45 +0300
+
 modbus-utils-rpc (1.0.1) stable; urgency=medium
 
   * Add tests

@@ -8,7 +8,7 @@ from enum import IntEnum
 
 import paho.mqtt.client as mosquitto
 import umodbus.exceptions
-from modbus_utils_rpc import exceptions
+from modbus_client_rpc import exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
