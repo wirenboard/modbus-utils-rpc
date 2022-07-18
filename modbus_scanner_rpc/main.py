@@ -6,6 +6,7 @@ from umodbus.client.serial import redundancy_check
 
 
 def create_message(message, response_size):
+    """Creates dictionary for rpc request"""
     return {
         "path": "/dev/ttyRS485-2",
         "response_size": response_size,
@@ -15,10 +16,13 @@ def create_message(message, response_size):
 
 
 def start_scan(rpc_client):
+    """Send broadcast command 00600198, where 60 01 - command and start scan subcommand for WB Devices, 98 - CRC"""
     rpc_client.call("wb-mqtt-serial", "port", "Load", create_message("00600198", 0), 500.0)
 
 
 def continue_scan(rpc_client):
+    """Send 60 command and 02 subcommand for scan continue. Devices respond sequentially with subcommand 03 on every 02 subcommand."""
+    """If not a single unasked device left, first device respond with 04 subcommand"""
     response = rpc_client.call("wb-mqtt-serial", "port", "Load", create_message("006002D801", 60), 500.0)
     scan_message = bytearray.fromhex(response["response"].lstrip("ff"))
 
