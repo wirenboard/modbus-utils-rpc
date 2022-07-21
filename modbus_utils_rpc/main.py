@@ -115,7 +115,14 @@ def create_modbus_message(
 
 def create_rpc_request(args, get_port_params, modbus_message, response_size):
     rpc_request = get_port_params(args)
-    rpc_request.update({"response_size": response_size, "format": "HEX", "msg": modbus_message})
+    rpc_request.update(
+        {
+            "response_size": response_size,
+            "format": "HEX",
+            "msg": modbus_message,
+            "total_timeout": args.timeout,
+        }
+    )
     return rpc_request
 
 
