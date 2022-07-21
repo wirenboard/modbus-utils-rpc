@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.0.2) stable; urgency=medium
+
+  * Error handling using mqttrpc library
+
+ -- Ekaterina Volkova <ekaterina.volkova@wirenboard.ru>  Wed, 20 Jul 2022 08:38:18 +0300
+
 modbus-utils-rpc (1.0.1) stable; urgency=medium
 
   * Add tests

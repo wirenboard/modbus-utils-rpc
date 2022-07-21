@@ -2,6 +2,7 @@ from argparse import Namespace
 
 import pytest
 from modbus_utils_rpc import main
+from mqttrpc import client as rpcclient
 from pytest_mock import mocker
 
 test_modbus_parameters = [
@@ -270,7 +271,11 @@ def test_create_rpc_request(get_path_function, options, expected_path):
     assert (request["format"], request["msg"], request["response_size"]) == ("HEX", "message", 10)
 
 
-test_send_message_params = [("request", "response")]
+test_send_message_params = [
+    ("request", "response", "none"),
+    ("request", "response", "MQTTRPCError"),
+    ("request", "response", "TimeoutError"),
+]
 
 
 @pytest.fixture(params=test_send_message_params)
@@ -282,8 +287,9 @@ def test_send_message(mocker, send_message_context):
 
     request = send_message_context[0]
     expected_response = send_message_context[1]
-    broker = main.DEFAULT_BROKER
+    must_fail = send_message_context[2]
     request_timeout = 1000
+    args = {"mqtt_broker": main.DEFAULT_BROKER, "timeout": request_timeout}
 
     def test_rpc_call(self, driver, service, method, params, timeout=None):
         assert (
@@ -293,6 +299,11 @@ def test_send_message(mocker, send_message_context):
             and params == request
             and timeout == request_timeout / 1000
         )
+        if must_fail == "MQTTRPCError":
+            raise rpcclient.MQTTRPCError("message", 0, "data")
+        elif must_fail == "TimeoutError":
+            raise rpcclient.TimeoutError
+
         return expected_response
 
     def test_connect(self, ip, port):
@@ -305,13 +316,17 @@ def test_send_message(mocker, send_message_context):
     mocker.patch("modbus_utils_rpc.main.mosquitto.Mosquitto.loop_stop")
     mocker.patch("modbus_utils_rpc.main.mosquitto.Mosquitto.disconnect")
 
-    assert main.send_message(broker, request, request_timeout) == expected_response
+    if must_fail != "none":
+        with pytest.raises(Exception):
+            assert main.send_message(Namespace(**args), request) == expected_response
+    else:
+        assert main.send_message(Namespace(**args), request) == expected_response
 
 
 test_parse_rpc_params = [
-    ({"result_code": 0, "response": "modbus_response", "error_msg": "Error"}, False),
-    ({"result_code": -1, "response": "modbus_response", "error_msg": "Error"}, True),
-    ({"result_code": -100, "response": "modbus_response", "error_msg": "Error"}, True),
+    ({"response": "modbus_response"}, False),
+    ({"Response": "modbus_response"}, True),
+    ({"": ""}, True),
 ]
 
 
@@ -321,16 +336,10 @@ def test_parse_rpc_response(rpc_response, must_fail):
     if must_fail:
         with pytest.raises(Exception):
             modbus_response = main.parse_rpc_response(
-                Namespace(**{"serialport_host": "rtu_path"}),
-                main.get_rtu_params,
-                "request",
                 rpc_response,
             )
     else:
         modbus_response = main.parse_rpc_response(
-            Namespace(**{"serialport_host": "rtu_path"}),
-            main.get_rtu_params,
-            "request",
             rpc_response,
         )
 
@@ -495,19 +504,12 @@ def test_main(mocker, main_context):
         assert response_size == test_response_size
         return test_rpc_request
 
-    def send_message(broker, message, timeout):
-        assert broker == test_options.mqtt_broker
+    def send_message(args, message):
+        assert args == test_options
         assert message == test_rpc_request
-        assert timeout == test_options.timeout
         return test_rpc_response
 
-    def parse_rpc_response(args, get_port_params, request, response):
-        assert args == test_options
-        if test_options.mode == "rtu":
-            assert get_port_params == main.get_rtu_params
-        else:
-            assert get_port_params == main.get_tcp_params
-        assert request == test_rpc_request
+    def parse_rpc_response(response):
         assert response == test_rpc_response
         return test_modbus_response
 
