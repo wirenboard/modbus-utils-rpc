@@ -141,15 +141,15 @@ def mqtt_client(name, broker=DEFAULT_BROKER):
         client.disconnect()
 
 
-def send_message(args, message):
-    with mqtt_client("modbus-utils-rpc-%d" % os.getpid(), args.mqtt_broker) as client:
+def send_message(args, broker, message, timeout):
+    with mqtt_client("modbus-utils-rpc-%d" % os.getpid(), broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
 
-            logger.debug("RPC Client -> %s (%d timeout ms)", message, args.timeout)
+            logger.debug("RPC Client -> %s (%d timeout ms)", message, timeout)
             # RPC Client accepts timeout in seconds
-            response = rpc_client.call("wb-mqtt-serial", "port", "Load", message, args.timeout / 1000)
+            response = rpc_client.call("wb-mqtt-serial", "port", "Load", message, timeout / 1000)
             logger.debug("RPC Client <- %s", response)
 
         except rpcclient.TimeoutError as error:
@@ -162,7 +162,7 @@ def send_message(args, message):
 
 
 def parse_rpc_response(response):
-    if "response" in response:
+    if "response" in response.keys():
         logger.debug("Response: %s", response["response"])
         return response["response"]
     else:
