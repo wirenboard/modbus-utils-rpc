@@ -258,6 +258,7 @@ test_rpc_param = [
 def test_create_rpc_request(get_path_function, options, expected_path):
     test_message = "message"
     test_response_size = 10
+    test_timeout = 10000
 
     def test_get_path_function(options):
         path = get_path_function(options)
@@ -265,7 +266,7 @@ def test_create_rpc_request(get_path_function, options, expected_path):
         return path
 
     request = main.create_rpc_request(
-        Namespace(**options), test_get_path_function, test_message, test_response_size
+        Namespace(**options), test_get_path_function, test_message, test_response_size, test_timeout
     )
 
     assert (request["format"], request["msg"], request["response_size"]) == ("HEX", "message", 10)
@@ -318,9 +319,15 @@ def test_send_message(mocker, send_message_context):
 
     if must_fail != "none":
         with pytest.raises(Exception):
-            assert main.send_message(Namespace(**args), request) == expected_response
+            assert (
+                main.send_message(Namespace(**args), args["mqtt_broker"], request, args["timeout"])
+                == expected_response
+            )
     else:
-        assert main.send_message(Namespace(**args), request) == expected_response
+        assert (
+            main.send_message(Namespace(**args), args["mqtt_broker"], request, args["timeout"])
+            == expected_response
+        )
 
 
 test_parse_rpc_params = [
@@ -494,7 +501,7 @@ def test_main(mocker, main_context):
         assert write_data == test_options.write_data
         return test_modbus_message, test_response_size
 
-    def create_rpc_request(args, get_port_params, modbus_message, response_size):
+    def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
         assert args == test_options
         if test_options.mode == "rtu":
             assert get_port_params == main.get_rtu_params
@@ -502,11 +509,14 @@ def test_main(mocker, main_context):
             assert get_port_params == main.get_tcp_params
         assert modbus_message == test_modbus_message
         assert response_size == test_response_size
+        assert timeout == test_options.timeout
         return test_rpc_request
 
-    def send_message(args, message):
+    def send_message(args, broker, message, timeout):
         assert args == test_options
         assert message == test_rpc_request
+        assert broker == test_options.mqtt_broker
+        assert timeout == test_options.timeout
         return test_rpc_response
 
     def parse_rpc_response(response):
