@@ -156,7 +156,8 @@ def send_message(args, broker, message, timeout):
             raise exceptions.RPCClientTimeoutError from error
 
         except rpcclient.MQTTRPCError as error:
-            raise exceptions.RPCError(error.rpc_message, error.code, error.data, vars(args)) from error
+            logger.debug("Options: %s", vars(args))
+            raise exceptions.RPCError(error.rpc_message, error.code, error.data) from error
 
         return response
 
@@ -166,8 +167,9 @@ def parse_rpc_response(response):
         logger.debug("Response: %s", response["response"])
         return response["response"]
     else:
-        raise exceptions.RPCParseError(
-            "Parse error", RPCErrorCode.E_RPC_PARSE_ERROR, '"response" field is missing', response
+        logger.debug("Response: %s", response)
+        raise exceptions.RPCError(
+            "Parse error", RPCErrorCode.E_RPC_PARSE_ERROR, '"response" field is missing'
         )
 
 
@@ -231,22 +233,6 @@ def handle_rpcerror(error):
     logger.debug("Error message: %s", error.error_message)
     logger.debug("Error code: %d", error.error_code)
     logger.debug("Error data: %s", error.error_data)
-    logger.debug("Options: %s", error.parameters)
-
-    if error.error_code == RPCErrorCode.E_RPC_REQUEST_TIMEOUT:
-        result_code = ResultCode.OPERATION_ERROR
-    elif error.error_code == RPCErrorCode.E_RPC_SERVER_ERROR:
-        result_code = ResultCode.USER_INPUT_ERROR
-
-    return result_code
-
-
-def handle_rpcparseerror(error):
-    print("ERROR occurred")
-    logger.debug("Error message: %s", error.error_message)
-    logger.debug("Error code: %d", error.error_code)
-    logger.debug("Error data: %s", error.error_data)
-    logger.debug("Response: %s", error.response)
 
     return ResultCode.OPERATION_ERROR
 
@@ -266,7 +252,7 @@ def process_request(args, lib, get_port_params):
 
         rpc_request = create_rpc_request(args, get_port_params, modbus_msg_str, modbus_resp_size)
 
-        rpc_response = send_message(args, rpc_request)
+        rpc_response = send_message(args, args.mqtt_broker, rpc_request, args.timeout)
 
         modbus_resp_str = parse_rpc_response(rpc_response)
 
@@ -284,8 +270,6 @@ def process_request(args, lib, get_port_params):
         result_code = handle_rpcumodbusparseerror(modbus_resp_str)
     except exceptions.RPCError as error:
         result_code = handle_rpcerror(error)
-    except exceptions.RPCParseError as error:
-        result_code = handle_rpcparseerror(error)
 
     return result_code
 

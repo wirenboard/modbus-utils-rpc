@@ -25,18 +25,7 @@ class ModbusParseError(Exception):
 class RPCError(Exception):
     """Rises if RPC request response is not successful"""
 
-    def __init__(self, error_message, error_code, error_data, parameters):
+    def __init__(self, error_message, error_code, error_data):
         self.error_message = error_message
         self.error_code = error_code
         self.error_data = error_data
-        self.parameters = parameters
-
-
-class RPCParseError(Exception):
-    """RPC response parsing error"""
-
-    def __init__(self, error_message, error_code, error_data, response):
-        self.error_message = error_message
-        self.error_code = error_code
-        self.error_data = error_data
-        self.response = response
