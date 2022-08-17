@@ -113,14 +113,14 @@ def create_modbus_message(
     return message_str, response_size
 
 
-def create_rpc_request(args, get_port_params, modbus_message, response_size):
+def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
     rpc_request = get_port_params(args)
     rpc_request.update(
         {
             "response_size": response_size,
             "format": "HEX",
             "msg": modbus_message,
-            "total_timeout": args.timeout,
+            "total_timeout": timeout,
         }
     )
     return rpc_request
@@ -250,7 +250,9 @@ def process_request(args, lib, get_port_params):
             args.write_data,
         )
 
-        rpc_request = create_rpc_request(args, get_port_params, modbus_msg_str, modbus_resp_size)
+        rpc_request = create_rpc_request(
+            args, get_port_params, modbus_msg_str, modbus_resp_size, args.timeout
+        )
 
         rpc_response = send_message(args, args.mqtt_broker, rpc_request, args.timeout)
 
