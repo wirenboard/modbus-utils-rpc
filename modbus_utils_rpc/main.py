@@ -19,13 +19,10 @@ DEFAULT_BROKER = {"ip": "127.0.0.1", "port": 1883}
 logger = logging.getLogger(__name__)
 
 
-class RPCResultCode(IntEnum):
-    RPC_OK = 0
-    RPC_WRONG_PARAM_SET = -1
-    RPC_WRONG_PARAM_VALUE = -2
-    RPC_WRONG_PORT = -3
-    RPC_WRONG_IO = -4
-    RPC_WRONG_RESPONSE_LEN = -5
+class RPCErrorCode(IntEnum):
+    E_RPC_PARSE_ERROR = -32700
+    E_RPC_SERVER_ERROR = -32000
+    E_RPC_REQUEST_TIMEOUT = -32600
 
 
 class ResultCode(IntEnum):
@@ -116,9 +113,16 @@ def create_modbus_message(
     return message_str, response_size
 
 
-def create_rpc_request(args, get_port_params, modbus_message, response_size):
+def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
     rpc_request = get_port_params(args)
-    rpc_request.update({"response_size": response_size, "format": "HEX", "msg": modbus_message})
+    rpc_request.update(
+        {
+            "response_size": response_size,
+            "format": "HEX",
+            "msg": modbus_message,
+            "total_timeout": timeout,
+        }
+    )
     return rpc_request
 
 
@@ -137,7 +141,7 @@ def mqtt_client(name, broker=DEFAULT_BROKER):
         client.disconnect()
 
 
-def send_message(broker, message, timeout):
+def send_message(args, broker, message, timeout):
     with mqtt_client("modbus-utils-rpc-%d" % os.getpid(), broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
@@ -148,25 +152,25 @@ def send_message(broker, message, timeout):
             response = rpc_client.call("wb-mqtt-serial", "port", "Load", message, timeout / 1000)
             logger.debug("RPC Client <- %s", response)
 
-        except (rpcclient.TimeoutError) as error:
+        except rpcclient.TimeoutError as error:
             raise exceptions.RPCClientTimeoutError from error
+
+        except rpcclient.MQTTRPCError as error:
+            logger.debug("Options: %s", vars(args))
+            raise exceptions.RPCError(error.rpc_message, error.code, error.data) from error
 
         return response
 
 
-def parse_rpc_response(args, get_port_params, request, response):
-    result_code = int(response["result_code"])
-    response_message = response["response"]
-    error_message = response["error_msg"]
-
-    logger.debug("Error message: %s", error_message)
-    logger.debug("Result code: %d", result_code)
-
-    if result_code != RPCResultCode.RPC_OK:
-        print("ERROR occurred")
-        raise exceptions.RPCError(result_code, get_port_params(args), request, response)
-
-    return response_message
+def parse_rpc_response(response):
+    if "response" in response.keys():
+        logger.debug("Response: %s", response["response"])
+        return response["response"]
+    else:
+        logger.debug("Response: %s", response)
+        raise exceptions.RPCError(
+            "Parse error", RPCErrorCode.E_RPC_PARSE_ERROR, '"response" field is missing'
+        )
 
 
 def parse_modbus_response(lib, function, request, response):
@@ -225,30 +229,12 @@ def handle_rpcumodbusparseerror(response):
 
 
 def handle_rpcerror(error):
+    print("ERROR occurred")
+    logger.debug("Error message: %s", error.error_message)
+    logger.debug("Error code: %d", error.error_code)
+    logger.debug("Error data: %s", error.error_data)
 
-    if error.result_code == RPCResultCode.RPC_WRONG_PARAM_SET:
-        logger.error("Wrong RPC request parameters set: %s", error.rpc_parameters)
-        result_code = ResultCode.OPERATION_ERROR
-
-    elif error.result_code == RPCResultCode.RPC_WRONG_PARAM_VALUE:
-        logger.error("Wrong RPC parameter values: %s", error.rpc_parameters)
-        result_code = ResultCode.USER_INPUT_ERROR
-
-    elif error.result_code == RPCResultCode.RPC_WRONG_PORT:
-        logger.error("Requested port doesn't exist: %s", error.port_path)
-        result_code = ResultCode.USER_INPUT_ERROR
-
-    elif error.result_code == RPCResultCode.RPC_WRONG_IO:
-        logger.error("Device IO error: %s", error.port_path)
-        result_code = ResultCode.OPERATION_ERROR
-
-    elif error.result_code == RPCResultCode.RPC_WRONG_RESPONSE_LEN:
-        logger.error("Wrong expected response length:")
-        logger.error("\tExpected %d", error.rpc_parameters["response_size"])
-        logger.error("\tActual % d", len(error.rpc_response["response"]))
-        result_code = ResultCode.OPERATION_ERROR
-
-    return result_code
+    return ResultCode.OPERATION_ERROR
 
 
 def process_request(args, lib, get_port_params):
@@ -264,11 +250,13 @@ def process_request(args, lib, get_port_params):
             args.write_data,
         )
 
-        rpc_request = create_rpc_request(args, get_port_params, modbus_msg_str, modbus_resp_size)
+        rpc_request = create_rpc_request(
+            args, get_port_params, modbus_msg_str, modbus_resp_size, args.timeout
+        )
 
-        rpc_response = send_message(args.mqtt_broker, rpc_request, args.timeout)
+        rpc_response = send_message(args, args.mqtt_broker, rpc_request, args.timeout)
 
-        modbus_resp_str = parse_rpc_response(args, get_port_params, rpc_request, rpc_response)
+        modbus_resp_str = parse_rpc_response(rpc_response)
 
         parse_modbus_response(lib, args.func_type, modbus_msg_str, modbus_resp_str)
 
