@@ -23,9 +23,9 @@ def parse_broker_host(data):
     return {"ip": host[0], "port": int(host[1])}
 
 
-def create_rpc_request(serialport, modbus_message, response_size, timeout):
+def create_rpc_request(serial_port, modbus_message, response_size, timeout):
     return {
-        "path": serialport,
+        "path": serial_port,
         "response_size": response_size,
         "format": "HEX",
         "msg": modbus_message,
@@ -33,18 +33,18 @@ def create_rpc_request(serialport, modbus_message, response_size, timeout):
     }
 
 
-def start_scan(serialport, rpc_client, timeout):
-    """Send broadcast command 00600198, where 60 01 - command and start scan subcommand for WB Devices"""
-    rpc_request = create_rpc_request(serialport, "FD600109F0", 0, timeout)
+def start_scan(serial_port, rpc_client, timeout):
+    """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
+    rpc_request = create_rpc_request(serial_port, "FD600109F0", 0, timeout)
     print("SCAN INIT")
     print("RPC Client -> {}, {} ms".format(rpc_request, timeout))
     rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
 
 
-def continue_scan(serialport, rpc_client, timeout):
+def continue_scan(serial_port, rpc_client, timeout):
     """Send 60 command and 02 subcommand for scan continue. Devices respond sequentially with subcommand 03 on every 02 subcommand."""
     """If not a single unasked device left, first device respond with 04 subcommand"""
-    rpc_request = create_rpc_request(serialport, "FD600249F1", 60, timeout)
+    rpc_request = create_rpc_request(serial_port, "FD600249F1", 60, timeout)
     print("SCAN NEXT")
     print("RPC Client -> {}, {} ms".format(rpc_request, timeout))
     response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
@@ -85,7 +85,7 @@ def main(argv=sys.argv):
         "serialport",
         help="Serial port path",
         type=str,
-        metavar="serialport",
+        metavar="serial_port",
     )
 
     parser.add_argument(
@@ -115,8 +115,8 @@ def main(argv=sys.argv):
     rpc_client = rpcclient.TMQTTRPCClient(client)
     client.on_message = rpc_client.on_mqtt_message
 
-    start_scan(args.serialport, rpc_client, args.timeout)
-    while continue_scan(args.serialport, rpc_client, args.timeout):
+    start_scan(args.serial_port, rpc_client, args.timeout)
+    while continue_scan(args.serial_port, rpc_client, args.timeout):
         pass
 
 
