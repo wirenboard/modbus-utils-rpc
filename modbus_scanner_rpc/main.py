@@ -121,7 +121,6 @@ def scan_bus(args):
 def main(argv=sys.argv):
 
     parser = argparse.ArgumentParser()
-
     parser.add_argument(
         "--debug",
         help="Enable debug output",
@@ -136,7 +135,6 @@ def main(argv=sys.argv):
         type=str,
         metavar="serial_port",
     )
-
     parser.add_argument(
         "--broker",
         help="Mqtt broker IP:PORT",
@@ -145,7 +143,6 @@ def main(argv=sys.argv):
         type=parse_broker_host,
         required=False,
     )
-
     parser.add_argument(
         "-o",
         help="Timeout, ms",
