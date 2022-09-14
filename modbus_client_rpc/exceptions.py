@@ -19,7 +19,8 @@ class RPCClientTimeoutError(Exception):
 class ModbusParseError(Exception):
     """Rises if umodbus rises an exception after parse response attempt"""
 
-    pass
+    def __init__(self, modbus_message):
+        self.modbus_message = modbus_message
 
 
 class RPCError(Exception):

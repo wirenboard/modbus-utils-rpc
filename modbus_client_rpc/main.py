@@ -198,7 +198,7 @@ def parse_modbus_response(lib, function, request, response):
             print("SUCCESS: Coils/Registers written:", data)
 
     except (struct.error, umodbus.exceptions.ModbusError) as error:
-        raise exceptions.ModbusParseError from error
+        raise exceptions.ModbusParseError(response_byte) from error
 
 
 def handle_rpcumodbusparameterserror(args):
@@ -222,9 +222,9 @@ def handle_rpcclienttimeouterror(timeout):
     return ResultCode.OPERATION_ERROR
 
 
-def handle_rpcumodbusparseerror(response):
+def handle_rpcumodbusparseerror(error):
     logger.error("Error occurred while parsing modbus response:")
-    logger.error("%s", "".join("[{:02x}]".format(x) for x in bytearray.fromhex(response)))
+    logger.error("%s", "".join("[{:02x}]".format(x) for x in bytearray.fromhex(error.modbus_message)))
     return ResultCode.OPERATION_ERROR
 
 
@@ -268,8 +268,8 @@ def process_request(args, lib, get_port_params):
         result_code = handle_brokerconnectionerror()
     except exceptions.RPCClientTimeoutError:
         result_code = handle_rpcclienttimeouterror(args.timeout)
-    except exceptions.ModbusParseError:
-        result_code = handle_rpcumodbusparseerror(modbus_resp_str)
+    except exceptions.ModbusParseError as error:
+        result_code = handle_rpcumodbusparseerror(error)
     except exceptions.RPCError as error:
         result_code = handle_rpcerror(error)
 
