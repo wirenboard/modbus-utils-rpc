@@ -444,10 +444,14 @@ def main(argv=sys.argv):
         return ResultCode.USER_INPUT_ERROR
 
     if options.debug:
-        stream_handler = logging.StreamHandler(sys.stderr)
-        stream_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stream_handler)
-        logger.setLevel(logging.DEBUG)
+        logger_level = logging.DEBUG
+    else:
+        logger_level = logging.INFO
+
+    stream_handler = logging.StreamHandler(sys.stderr)
+    stream_handler.setLevel(logger_level)
+    logger.addHandler(stream_handler)
+    logger.setLevel(logger_level)
 
     if options.mode == "tcp":
         if options.parity_port is None:
