@@ -41,8 +41,8 @@ def create_rpc_request(serial_port, modbus_message, response_size, timeout):
 def start_scan(serial_port, rpc_client, timeout):
     """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
     rpc_request = create_rpc_request(serial_port, "FD600109F0", 0, timeout)
-    print("SCAN INIT")
-    print("RPC Client -> {}, {} ms".format(rpc_request, timeout))
+    logger.debug("Scan init")
+    logger.debug("RPC Client -> {}, {} ms".format(rpc_request, timeout))
     rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
     modbus_client.parse_rpc_response(rpc_response)
 
@@ -51,38 +51,38 @@ def continue_scan(serial_port, rpc_client, timeout):
     """Send 60 command and 02 subcommand for scan continue. Devices respond sequentially with subcommand 03 on every 02 subcommand."""
     """If not a single unasked device left, first device respond with 04 subcommand"""
     rpc_request = create_rpc_request(serial_port, "FD600249F1", 60, timeout)
-    print("SCAN NEXT")
-    print("RPC Client -> {}, {} ms".format(rpc_request, timeout))
+    logger.debug("Scan next")
+    logger.debug("RPC Client -> {}, {} ms".format(rpc_request, timeout))
     rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
-    print("RPC Client <- {}".format(rpc_response))
+    logger.debug("RPC Client <- {}".format(rpc_response))
 
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
     scan_message = bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
     try:
         redundancy_check.validate_crc(scan_message)
-
-        if not scan_message.startswith(bytearray.fromhex("FD60")):
-            print("Scan error while parsing answer", "".join("{:02x}".format(x) for x in scan_message))
-            return False
-
-        if scan_message[2] == 0x03:
-            serial_number = scan_message[3:-3]
-            modbus_address = scan_message[-3]
-            print(
-                "Found device with SN ",
-                "".join("{:02x}".format(x) for x in serial_number),
-                int.from_bytes(serial_number, byteorder="big", signed=False),
-                "modbus address ",
-                modbus_address,
-            )
-            return True
-
-        if scan_message[2] == 0x04:
-            print("SCAN END")
-            return False
     except redundancy_check.CRCError as error:
         raise exceptions.ModbusParseError(scan_message) from error
+
+    if not scan_message.startswith(bytearray.fromhex("FD60")):
+        print("Scan error while parsing answer", "".join("{:02x}".format(x) for x in scan_message))
+        return False
+
+    if scan_message[2] == 0x03:
+        serial_number = scan_message[3:-3]
+        modbus_address = scan_message[-3]
+        print(
+            "Found device with SN ",
+            "".join("{:02x}".format(x) for x in serial_number),
+            int.from_bytes(serial_number, byteorder="big", signed=False),
+            "modbus address ",
+            modbus_address,
+        )
+        return True
+
+    if scan_message[2] == 0x04:
+        logger.debug("Scan end")
+        return False
 
 
 @contextmanager
