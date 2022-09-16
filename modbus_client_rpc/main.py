@@ -450,6 +450,7 @@ def main(argv=sys.argv):
 
     stream_handler = logging.StreamHandler(sys.stderr)
     stream_handler.setLevel(logger_level)
+    stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
     logger.addHandler(stream_handler)
     logger.setLevel(logger_level)
 
