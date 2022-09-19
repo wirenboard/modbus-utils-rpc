@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 import pytest
-from modbus_utils_rpc import main
+from modbus_client_rpc import main
 from mqttrpc import client as rpcclient
 from pytest_mock import mocker
 
@@ -310,12 +310,12 @@ def test_send_message(mocker, send_message_context):
     def test_connect(self, ip, port):
         assert {"ip": ip, "port": port} == main.DEFAULT_BROKER
 
-    mocker.patch("modbus_utils_rpc.main.rpcclient.TMQTTRPCClient.call", test_rpc_call)
+    mocker.patch("modbus_client_rpc.main.rpcclient.TMQTTRPCClient.call", test_rpc_call)
 
-    mocker.patch("modbus_utils_rpc.main.mosquitto.Mosquitto.connect", test_connect)
-    mocker.patch("modbus_utils_rpc.main.mosquitto.Mosquitto.loop_start")
-    mocker.patch("modbus_utils_rpc.main.mosquitto.Mosquitto.loop_stop")
-    mocker.patch("modbus_utils_rpc.main.mosquitto.Mosquitto.disconnect")
+    mocker.patch("modbus_client_rpc.main.mosquitto.Mosquitto.connect", test_connect)
+    mocker.patch("modbus_client_rpc.main.mosquitto.Mosquitto.loop_start")
+    mocker.patch("modbus_client_rpc.main.mosquitto.Mosquitto.loop_stop")
+    mocker.patch("modbus_client_rpc.main.mosquitto.Mosquitto.disconnect")
 
     if must_fail != "none":
         with pytest.raises(Exception):
@@ -532,11 +532,11 @@ def test_main(mocker, main_context):
         assert request == test_modbus_message
         assert response == test_modbus_response
 
-    mocker.patch("modbus_utils_rpc.main.parse_options", parse_options)
-    mocker.patch("modbus_utils_rpc.main.create_modbus_message", create_modbus_message)
-    mocker.patch("modbus_utils_rpc.main.create_rpc_request", create_rpc_request)
-    mocker.patch("modbus_utils_rpc.main.send_message", send_message)
-    mocker.patch("modbus_utils_rpc.main.parse_rpc_response", parse_rpc_response)
-    mocker.patch("modbus_utils_rpc.main.parse_modbus_response", parse_modbus_response)
+    mocker.patch("modbus_client_rpc.main.parse_options", parse_options)
+    mocker.patch("modbus_client_rpc.main.create_modbus_message", create_modbus_message)
+    mocker.patch("modbus_client_rpc.main.create_rpc_request", create_rpc_request)
+    mocker.patch("modbus_client_rpc.main.send_message", send_message)
+    mocker.patch("modbus_client_rpc.main.parse_rpc_response", parse_rpc_response)
+    mocker.patch("modbus_client_rpc.main.parse_modbus_response", parse_modbus_response)
 
     main.main(test_argv)

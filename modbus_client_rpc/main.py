@@ -8,7 +8,7 @@ from enum import IntEnum
 
 import paho.mqtt.client as mosquitto
 import umodbus.exceptions
-from modbus_utils_rpc import exceptions
+from modbus_client_rpc import exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
@@ -198,7 +198,7 @@ def parse_modbus_response(lib, function, request, response):
             print("SUCCESS: Coils/Registers written:", data)
 
     except (struct.error, umodbus.exceptions.ModbusError) as error:
-        raise exceptions.ModbusParseError from error
+        raise exceptions.ModbusParseError(response_byte) from error
 
 
 def handle_rpcumodbusparameterserror(args):
@@ -222,9 +222,9 @@ def handle_rpcclienttimeouterror(timeout):
     return ResultCode.OPERATION_ERROR
 
 
-def handle_rpcumodbusparseerror(response):
+def handle_rpcumodbusparseerror(error):
     logger.error("Error occurred while parsing modbus response:")
-    logger.error("%s", "".join("[{:02x}]".format(x) for x in bytearray.fromhex(response)))
+    logger.error("%s", "".join("[{:02x}]".format(x) for x in bytearray.fromhex(error.modbus_message)))
     return ResultCode.OPERATION_ERROR
 
 
@@ -268,8 +268,8 @@ def process_request(args, lib, get_port_params):
         result_code = handle_brokerconnectionerror()
     except exceptions.RPCClientTimeoutError:
         result_code = handle_rpcclienttimeouterror(args.timeout)
-    except exceptions.ModbusParseError:
-        result_code = handle_rpcumodbusparseerror(modbus_resp_str)
+    except exceptions.ModbusParseError as error:
+        result_code = handle_rpcumodbusparseerror(error)
     except exceptions.RPCError as error:
         result_code = handle_rpcerror(error)
 
@@ -444,10 +444,15 @@ def main(argv=sys.argv):
         return ResultCode.USER_INPUT_ERROR
 
     if options.debug:
-        stream_handler = logging.StreamHandler(sys.stderr)
-        stream_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stream_handler)
-        logger.setLevel(logging.DEBUG)
+        logger_level = logging.DEBUG
+    else:
+        logger_level = logging.INFO
+
+    stream_handler = logging.StreamHandler(sys.stderr)
+    stream_handler.setLevel(logger_level)
+    stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    logger.addHandler(stream_handler)
+    logger.setLevel(logger_level)
 
     if options.mode == "tcp":
         if options.parity_port is None:
