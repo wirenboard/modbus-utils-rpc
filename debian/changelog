@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.1.1) stable; urgency=medium
+
+  * Fix paho-mqtt version for bullseye
+
+ -- Ekaterina Volkova <ekaterina.volkova@wirenboard.ru>  Tue, 18 Oct 2022 10:16:09 +0300
+
 modbus-utils-rpc (1.1.0) stable; urgency=medium
 
   * Add modbus scanner package
