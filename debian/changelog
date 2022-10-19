@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.1.2) stable; urgency=medium
+
+  * Fix compatibility with paho.mqtt.python >= 1.6.0
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Wed, 19 Oct 2022 16:11:02 +0300
+
 modbus-utils-rpc (1.1.1) stable; urgency=medium
 
   * Fix paho-mqtt version for bullseye
