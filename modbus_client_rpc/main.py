@@ -129,7 +129,7 @@ def create_rpc_request(args, get_port_params, modbus_message, response_size, tim
 @contextmanager
 def mqtt_client(name, broker=DEFAULT_BROKER):
     try:
-        client = mosquitto.Mosquitto(name)
+        client = mosquitto.Client(name)
         logger.debug("Connecting to broker %s:%s", broker["ip"], broker["port"])
         client.connect(broker["ip"], broker["port"])
         client.loop_start()
