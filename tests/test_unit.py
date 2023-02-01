@@ -1,9 +1,10 @@
 from argparse import Namespace
 
 import pytest
-from modbus_client_rpc import main
 from mqttrpc import client as rpcclient
 from pytest_mock import mocker
+
+from modbus_client_rpc import main
 
 test_modbus_parameters = [
     (

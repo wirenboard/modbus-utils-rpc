@@ -1,6 +1,6 @@
 modbus-utils-rpc (1.1.3) stable; urgency=medium
 
-  * CI: change default build-target; enable python checks; make black happier
+  * CI: change default build-target; enable python checks; make black & isort happier
 
  -- Vladimir Romanov <v.romanov@wirenboard.com>  Wed, 01 Feb 2023 17:13:12 +0300
 

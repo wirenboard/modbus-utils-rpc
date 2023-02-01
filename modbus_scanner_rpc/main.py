@@ -5,10 +5,11 @@ import sys
 from contextlib import contextmanager
 
 import paho.mqtt.client as mqtt
-from modbus_client_rpc import exceptions
-from modbus_client_rpc import main as modbus_client
 from mqttrpc import client as rpcclient
 from umodbus.client.serial import redundancy_check
+
+from modbus_client_rpc import exceptions
+from modbus_client_rpc import main as modbus_client
 
 logger = logging.getLogger(__name__)
 

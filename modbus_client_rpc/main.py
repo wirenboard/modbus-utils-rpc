@@ -8,11 +8,12 @@ from enum import IntEnum
 
 import paho.mqtt.client as mosquitto
 import umodbus.exceptions
-from modbus_client_rpc import exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
 from umodbus.client.serial import rtu
+
+from modbus_client_rpc import exceptions
 
 DEFAULT_BROKER = {"ip": "127.0.0.1", "port": 1883}
 
