@@ -32,6 +32,10 @@ def parse_broker_host(data):
 def create_rpc_request(serial_port, modbus_message, response_size, timeout):
     return {
         "path": serial_port,
+        "baud_rate": 9600,
+        "parity": "N",
+        "data_bits": 8,
+        "stop_bits": 1,
         "response_size": response_size,
         "format": "HEX",
         "msg": modbus_message,
