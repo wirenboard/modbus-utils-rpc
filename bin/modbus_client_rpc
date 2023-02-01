@@ -2,4 +2,5 @@
 
 import sys
 from modbus_client_rpc.main import main
+
 sys.exit(main(sys.argv))
