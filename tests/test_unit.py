@@ -246,12 +246,18 @@ test_rpc_param = [
         main.get_rtu_params,
         {
             "serialport_host": "rtu_path",
+            "baudrate": 9600,
+            "parity_port": "N",
+            "data_bits": 8,
+            "stop_bits": 1,
+        },
+        {
+            "path": "rtu_path",
             "baud_rate": 9600,
             "parity": "N",
             "data_bits": 8,
             "stop_bits": 1,
         },
-        {"path": "rtu_path"},
     ),
     (
         main.get_tcp_params,
