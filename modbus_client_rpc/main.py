@@ -8,11 +8,12 @@ from enum import IntEnum
 
 import paho.mqtt.client as mosquitto
 import umodbus.exceptions
-from modbus_client_rpc import exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
 from umodbus.client.serial import rtu
+
+from modbus_client_rpc import exceptions
 
 DEFAULT_BROKER = {"ip": "127.0.0.1", "port": 1883}
 
@@ -36,8 +37,15 @@ def parse_hex_or_dec(data):
 
 
 def parse_parity_or_tcpport(data):
-    if data in ("none", "even", "odd"):
-        return data
+    parities = {
+        "none": "N",
+        "even": "E",
+        "odd": "O",
+    }
+    ret = parities.get(data)
+
+    if ret:
+        return ret
     else:
         try:
             return parse_hex_or_dec(data)
@@ -56,7 +64,13 @@ def get_tcp_params(args):
 
 
 def get_rtu_params(args):
-    return {"path": args.serialport_host}
+    return {
+        "path": args.serialport_host,
+        "baud_rate": args.baudrate,
+        "parity": args.parity_port,
+        "data_bits": args.data_bits,
+        "stop_bits": args.stop_bits,
+    }
 
 
 def create_modbus_message(

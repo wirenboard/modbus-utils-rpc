@@ -5,10 +5,11 @@ import sys
 from contextlib import contextmanager
 
 import paho.mqtt.client as mqtt
-from modbus_client_rpc import exceptions
-from modbus_client_rpc import main as modbus_client
 from mqttrpc import client as rpcclient
 from umodbus.client.serial import redundancy_check
+
+from modbus_client_rpc import exceptions
+from modbus_client_rpc import main as modbus_client
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,10 @@ def parse_broker_host(data):
 def create_rpc_request(serial_port, modbus_message, response_size, timeout):
     return {
         "path": serial_port,
+        "baud_rate": 9600,
+        "parity": "N",
+        "data_bits": 8,
+        "stop_bits": 1,
         "response_size": response_size,
         "format": "HEX",
         "msg": modbus_message,

@@ -1,9 +1,10 @@
 from argparse import Namespace
 
 import pytest
-from modbus_client_rpc import main
 from mqttrpc import client as rpcclient
 from pytest_mock import mocker
+
+from modbus_client_rpc import main
 
 test_modbus_parameters = [
     (
@@ -243,8 +244,20 @@ def test_create_modbus_message(
 test_rpc_param = [
     (
         main.get_rtu_params,
-        {"serialport_host": "rtu_path"},
-        {"path": "rtu_path"},
+        {
+            "serialport_host": "rtu_path",
+            "baudrate": 9600,
+            "parity_port": "N",
+            "data_bits": 8,
+            "stop_bits": 1,
+        },
+        {
+            "path": "rtu_path",
+            "baud_rate": 9600,
+            "parity": "N",
+            "data_bits": 8,
+            "stop_bits": 1,
+        },
     ),
     (
         main.get_tcp_params,
@@ -395,7 +408,7 @@ test_argv_params_positive = [
             baudrate=9600,
             data_bits=8,
             stop_bits=2,
-            parity_port="none",
+            parity_port="N",
             mqtt_broker={"ip": "127.0.0.1", "port": 1883},
             serialport_host="/dev/ttyRS485-1",
             write_data=[10],
