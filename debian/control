@@ -8,5 +8,5 @@ Standards-Version: 3.9.1
 
 Package: python3-modbus-utils-rpc
 Architecture: all
-Depends: python3, ${misc:Depends}, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt, python3-mqttrpc(>=1.1.2)
+Depends: python3, ${misc:Depends}, python3-umodbus (>=1.0.4-1+wb1), python3-paho-mqtt, python3-mqttrpc(>=1.1.2), wb-mqtt-serial (>=2.74.0~~)
 Description: Wiren Board modbus utility using RPC (python 3)
