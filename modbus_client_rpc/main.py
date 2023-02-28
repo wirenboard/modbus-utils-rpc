@@ -11,7 +11,7 @@ from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
 from umodbus.client.serial import rtu
-from wb_common.mqtt_client import MQTTClient
+from wb_common.mqtt_client import DEFAULT_BROKER_URL, MQTTClient
 
 logger = logging.getLogger(__name__)
 
@@ -406,7 +406,7 @@ def parse_options(argv=sys.argv):
         "--broker",
         help="Mqtt broker url",
         dest="mqtt_broker",
-        default="unix:///var/run/mosquitto/mosquitto.sock",
+        default=DEFAULT_BROKER_URL,
         type=str,
         required=False,
     )
