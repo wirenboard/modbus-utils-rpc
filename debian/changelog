@@ -1,3 +1,10 @@
+modbus-utils-rpc (1.1.4) stable; urgency=medium
+
+  * Use mqtt client wrapper from wb-common
+  * Support connection to Mosquitto through unix socket
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Tue, 28 Feb 2023 18:39:00 +0400
+
 modbus-utils-rpc (1.1.3) stable; urgency=medium
 
   * CI: change default build-target; enable python checks; make black & isort happier

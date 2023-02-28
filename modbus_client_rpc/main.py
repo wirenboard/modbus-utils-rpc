@@ -1,21 +1,17 @@
 import argparse
 import logging
-import os
 import struct
 import sys
 from contextlib import contextmanager
 from enum import IntEnum
 
-import paho.mqtt.client as mosquitto
 import umodbus.exceptions
+from modbus_client_rpc import exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
 from umodbus.client.serial import rtu
-
-from modbus_client_rpc import exceptions
-
-DEFAULT_BROKER = {"ip": "127.0.0.1", "port": 1883}
+from wb_common.mqtt_client import MQTTClient
 
 logger = logging.getLogger(__name__)
 
@@ -141,22 +137,20 @@ def create_rpc_request(args, get_port_params, modbus_message, response_size, tim
 
 
 @contextmanager
-def mqtt_client(name, broker=DEFAULT_BROKER):
+def mqtt_client(name, broker):
     try:
-        client = mosquitto.Client(name)
-        logger.debug("Connecting to broker %s:%s", broker["ip"], broker["port"])
-        client.connect(broker["ip"], broker["port"])
-        client.loop_start()
+        client = MQTTClient(name, broker)
+        logger.debug("Connecting to broker %s", broker)
+        client.connect()
         yield client
     except (TimeoutError, ConnectionRefusedError) as error:
         raise exceptions.BrokerConnectionError from error
     finally:
-        client.loop_stop()
         client.disconnect()
 
 
 def send_message(args, broker, message, timeout):
-    with mqtt_client("modbus-utils-rpc-%d" % os.getpid(), broker) as client:
+    with mqtt_client("modbus-client-rpc", broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
@@ -410,10 +404,10 @@ def parse_options(argv=sys.argv):
 
     parser.add_argument(
         "--broker",
-        help="Mqtt broker IP:PORT",
+        help="Mqtt broker url",
         dest="mqtt_broker",
-        default=DEFAULT_BROKER,
-        type=parse_broker_host,
+        default="unix:///var/run/mosquitto/mosquitto.sock",
+        type=str,
         required=False,
     )
 
@@ -440,12 +434,6 @@ def parse_options(argv=sys.argv):
             error_options.append(x)
 
     return options, error_options
-
-
-# TODO: Now modbus-utils-rpc can only send messages to ports added to mqtt-serial.
-# In RTU mode options -b, -d, -s, -p are ignored at the moment.
-# We should add to mqtt-serial ability to open a port that is not in the configuration.
-# Also we should start use ignored options.
 
 
 def main(argv=sys.argv):
