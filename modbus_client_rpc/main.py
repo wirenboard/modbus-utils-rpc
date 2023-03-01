@@ -137,12 +137,12 @@ def mqtt_client(name, broker):
     try:
         client = MQTTClient(name, broker)
         logger.debug("Connecting to broker %s", broker)
-        client.connect()
+        client.start()
         yield client
     except (TimeoutError, ConnectionRefusedError) as error:
         raise exceptions.BrokerConnectionError from error
     finally:
-        client.disconnect()
+        client.stop()
 
 
 def send_message(args, broker, message, timeout):
