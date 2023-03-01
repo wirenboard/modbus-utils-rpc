@@ -6,12 +6,13 @@ from contextlib import contextmanager
 from enum import IntEnum
 
 import umodbus.exceptions
-from modbus_client_rpc import exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
 from umodbus.client.serial import rtu
 from wb_common.mqtt_client import DEFAULT_BROKER_URL, MQTTClient
+
+from modbus_client_rpc import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,6 @@ def parse_parity_or_tcpport(data):
         except ValueError as error:
             logger.error("Invalid value %s for -p option. Set {none|even|odd} or port number", data)
             raise error
-
-
-def parse_broker_host(data):
-    host = data.split(":")
-    return {"ip": host[0], "port": int(host[1])}
 
 
 def get_tcp_params(args):

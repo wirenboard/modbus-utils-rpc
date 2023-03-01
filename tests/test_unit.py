@@ -325,10 +325,10 @@ def test_send_message(mocker, send_message_context):
 
     mocker.patch("modbus_client_rpc.main.rpcclient.TMQTTRPCClient.call", test_rpc_call)
 
-    mocker.patch("modbus_client_rpc.main.mosquitto.Client.connect", test_connect)
-    mocker.patch("modbus_client_rpc.main.mosquitto.Client.loop_start")
-    mocker.patch("modbus_client_rpc.main.mosquitto.Client.loop_stop")
-    mocker.patch("modbus_client_rpc.main.mosquitto.Client.disconnect")
+    mocker.patch("modbus_client_rpc.main.MQTTClient.connect", test_connect)
+    mocker.patch("modbus_client_rpc.main.MQTTClient.loop_start")
+    mocker.patch("modbus_client_rpc.main.MQTTClient.loop_stop")
+    mocker.patch("modbus_client_rpc.main.MQTTClient.disconnect")
 
     if must_fail != "none":
         with pytest.raises(Exception):

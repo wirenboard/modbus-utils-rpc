@@ -3,11 +3,12 @@ import logging
 import sys
 from contextlib import contextmanager
 
-from modbus_client_rpc import exceptions
-from modbus_client_rpc import main as modbus_client
 from mqttrpc import client as rpcclient
 from umodbus.client.serial import redundancy_check
 from wb_common.mqtt_client import DEFAULT_BROKER_URL, MQTTClient
+
+from modbus_client_rpc import exceptions
+from modbus_client_rpc import main as modbus_client
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +21,6 @@ def remove_substring_prefix(prefix, string):
 
 def parse_hex_or_dec(data):
     return int(data, 0)
-
-
-def parse_broker_host(data):
-    host = data.split(":")
-    return {"ip": host[0], "port": int(host[1])}
 
 
 def create_rpc_request(serial_port, modbus_message, response_size, timeout):
