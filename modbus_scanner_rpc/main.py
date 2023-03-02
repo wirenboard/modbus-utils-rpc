@@ -1,12 +1,11 @@
 import argparse
 import logging
-import os
 import sys
 from contextlib import contextmanager
 
-import paho.mqtt.client as mqtt
 from mqttrpc import client as rpcclient
 from umodbus.client.serial import redundancy_check
+from wb_common.mqtt_client import DEFAULT_BROKER_URL, MQTTClient
 
 from modbus_client_rpc import exceptions
 from modbus_client_rpc import main as modbus_client
@@ -22,11 +21,6 @@ def remove_substring_prefix(prefix, string):
 
 def parse_hex_or_dec(data):
     return int(data, 0)
-
-
-def parse_broker_host(data):
-    host = data.split(":")
-    return {"ip": host[0], "port": int(host[1])}
 
 
 def create_rpc_request(serial_port, modbus_message, response_size, timeout):
@@ -91,22 +85,20 @@ def continue_scan(serial_port, rpc_client, timeout):
 
 
 @contextmanager
-def mqtt_client(name, broker=modbus_client.DEFAULT_BROKER):
+def mqtt_client(name, broker):
     try:
-        client = mqtt.Client(name)
-        logger.debug("Connecting to broker %s:%s", broker["ip"], broker["port"])
-        client.connect(broker["ip"], broker["port"])
-        client.loop_start()
+        client = MQTTClient(name, broker)
+        logger.debug("Connecting to broker %s", broker)
+        client.start()
         yield client
     except (TimeoutError, ConnectionRefusedError, OSError) as error:
         raise exceptions.BrokerConnectionError from error
     finally:
-        client.loop_stop()
-        client.disconnect()
+        client.stop()
 
 
 def scan_bus(args):
-    with mqtt_client("modbus-scanner-rpc-%d" % os.getpid(), args.mqtt_broker) as client:
+    with mqtt_client("modbus-scanner-rpc", args.mqtt_broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
@@ -142,10 +134,10 @@ def main(argv=sys.argv):
     )
     parser.add_argument(
         "--broker",
-        help="Mqtt broker IP:PORT",
+        help="Mqtt broker url",
         dest="mqtt_broker",
-        default=modbus_client.DEFAULT_BROKER,
-        type=parse_broker_host,
+        default=DEFAULT_BROKER_URL,
+        type=str,
         required=False,
     )
     parser.add_argument(
