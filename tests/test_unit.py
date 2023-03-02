@@ -303,7 +303,7 @@ def test_send_message(mocker, send_message_context):
     expected_response = send_message_context[1]
     must_fail = send_message_context[2]
     request_timeout = 1000
-    args = {"mqtt_broker": main.DEFAULT_BROKER, "timeout": request_timeout}
+    args = {"mqtt_broker": "tcp://127.0.0.1:1883", "timeout": request_timeout}
 
     def test_rpc_call(self, driver, service, method, params, timeout=None):
         assert (
@@ -321,7 +321,7 @@ def test_send_message(mocker, send_message_context):
         return expected_response
 
     def test_connect(self, ip, port):
-        assert {"ip": ip, "port": port} == main.DEFAULT_BROKER
+        assert ip == "127.0.0.1" and port == 1883
 
     mocker.patch("modbus_client_rpc.main.rpcclient.TMQTTRPCClient.call", test_rpc_call)
 
@@ -409,7 +409,7 @@ test_argv_params_positive = [
             data_bits=8,
             stop_bits=2,
             parity_port="N",
-            mqtt_broker={"ip": "127.0.0.1", "port": 1883},
+            mqtt_broker="unix:///var/run/mosquitto/mosquitto.sock",
             serialport_host="/dev/ttyRS485-1",
             write_data=[10],
         ),
@@ -430,14 +430,14 @@ test_argv_params_positive = [
             data_bits=8,
             stop_bits=1,
             parity_port=1000,
-            mqtt_broker={"ip": "127.0.0.1", "port": 1883},
+            mqtt_broker="unix:///var/run/mosquitto/mosquitto.sock",
             serialport_host="192.168.10.4",
             write_data=[],
         ),
         [],
     ),
     (
-        ["test", "-mrtu", "-r10", "/dev/ttyRS485-1", "-a22", "-t0x05", "--broker", "192.168.10.6:1883"],
+        ["test", "-mrtu", "-r10", "/dev/ttyRS485-1", "-a22", "-t0x05", "--broker", "tcp://192.168.10.6:1883"],
         Namespace(
             debug=False,
             mode="rtu",
@@ -451,7 +451,7 @@ test_argv_params_positive = [
             data_bits=8,
             stop_bits=1,
             parity_port=None,
-            mqtt_broker={"ip": "192.168.10.6", "port": 1883},
+            mqtt_broker="tcp://192.168.10.6:1883",
             serialport_host="/dev/ttyRS485-1",
             write_data=[],
         ),
