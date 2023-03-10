@@ -2,6 +2,11 @@
 
 import sys
 
-from modbus_scanner_rpc.main import main
+try:
+    from modbus_scanner_rpc.main import main
 
-sys.exit(main(sys.argv))
+    ec = main(sys.argv)
+except KeyboardInterrupt:
+    ec = 0
+finally:
+    sys.exit(ec)
