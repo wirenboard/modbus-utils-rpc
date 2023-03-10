@@ -46,6 +46,7 @@ def start_scan(serial_port, rpc_client, timeout):
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
+
 def continue_scan(serial_port, rpc_client, timeout):
     """Send 60 command and 02 subcommand for scan continue. Devices respond sequentially with subcommand 03 on every 02 subcommand."""
     """If not a single unasked device left, first device respond with 04 subcommand"""
@@ -57,6 +58,7 @@ def continue_scan(serial_port, rpc_client, timeout):
 
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
+
 
 def should_continue(scan_message):
     try:
