@@ -4,7 +4,6 @@ import pytest
 
 from modbus_scanner_rpc import main
 
-
 working_args_parsing_cases = [
     (
         ["--debug", "--broker", "127.0.0.1", "-o", "100", "/dev/ttyRS485-1"],
