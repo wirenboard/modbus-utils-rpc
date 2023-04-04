@@ -118,8 +118,7 @@ def scan_bus(args):
             raise exceptions.RPCError(error.rpc_message, error.code, error.data) from error
 
 
-def main(argv=sys.argv):
-
+def parse_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--debug",
@@ -151,8 +150,11 @@ def main(argv=sys.argv):
         dest="timeout",
         required=False,
     )
+    return parser.parse_args(argv)
 
-    args = parser.parse_args()
+
+def main(argv=sys.argv):
+    args = parse_args(argv[1:])
 
     if args.debug:
         logger_level = logging.DEBUG
