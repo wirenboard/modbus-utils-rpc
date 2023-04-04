@@ -24,7 +24,9 @@ working_args_parsing_cases = [
         ),
     ),
     (
-        ["/dev/ttyRS485-1",],
+        [
+            "/dev/ttyRS485-1",
+        ],
         Namespace(
             debug=False,
             mqtt_broker="unix:///var/run/mosquitto/mosquitto.sock",
@@ -36,9 +38,20 @@ working_args_parsing_cases = [
 
 
 erroneous_args_parsing_cases = [
-    (["-h",], [], ),
-    (["--debug", "-o", "100"], [],),
-    (["--debug", "--broker", "127.0.0.1", "-o", "100", "/dev/ttyRS485-1", "--BANG"], [],),
+    (
+        [
+            "-h",
+        ],
+        [],
+    ),
+    (
+        ["--debug", "-o", "100"],
+        [],
+    ),
+    (
+        ["--debug", "--broker", "127.0.0.1", "-o", "100", "/dev/ttyRS485-1", "--BANG"],
+        [],
+    ),
 ]
 
 
