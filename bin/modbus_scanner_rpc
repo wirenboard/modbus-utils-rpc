@@ -2,6 +2,8 @@
 
 import sys
 
+ec = 1
+
 try:
     from modbus_scanner_rpc.main import main
 
