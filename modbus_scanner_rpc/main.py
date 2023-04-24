@@ -23,13 +23,25 @@ def parse_hex_or_dec(data):
     return int(data, 0)
 
 
-def create_rpc_request(serial_port, modbus_message, timeout):
+def get_all_uart_params(
+    bds=[9600, 115200, 57600, 1200, 2400, 4800, 19200, 38400],
+    parities=["N", "E", "O"],
+):
+    most_frequent_bds, less_frequent_bds = bds[:3], bds[3:]
+    for parity in parities:
+        for bd in most_frequent_bds:
+            yield bd, parity
+        for bd in less_frequent_bds:
+            yield bd, parity
+
+
+def create_rpc_request(serial_port, bd, parity, modbus_message, timeout):
     return {
         "path": serial_port,
-        "baud_rate": 9600,
-        "parity": "N",
+        "baud_rate": bd,
+        "parity": parity,
         "data_bits": 8,
-        "stop_bits": 1,
+        "stop_bits": 2,
         "response_size": 1000,  # we need relatively huge one; wb-mqtt-serial returns only actual bytes
         "format": "HEX",
         "msg": modbus_message,
@@ -37,9 +49,9 @@ def create_rpc_request(serial_port, modbus_message, timeout):
     }
 
 
-def start_scan(serial_port, rpc_client, timeout):
+def start_scan(serial_port, bd, parity, rpc_client, timeout):
     """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
-    rpc_request = create_rpc_request(serial_port, "FD600109F0", timeout)
+    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout)
     logger.debug("Scan init")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
     rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
@@ -47,10 +59,10 @@ def start_scan(serial_port, rpc_client, timeout):
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
 
-def continue_scan(serial_port, rpc_client, timeout):
+def continue_scan(serial_port, bd, parity, rpc_client, timeout):
     """Send 60 command and 02 subcommand for scan continue. Devices respond sequentially with subcommand 03 on every 02 subcommand."""
     """If not a single unasked device left, first device respond with 04 subcommand"""
-    rpc_request = create_rpc_request(serial_port, "FD600249F1", timeout)
+    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout)
     logger.debug("Scan next")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
     rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
@@ -60,7 +72,7 @@ def continue_scan(serial_port, rpc_client, timeout):
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
 
-def should_continue(scan_message):
+def should_continue(bd, parity, scan_message):
     try:
         redundancy_check.validate_crc(scan_message)
     except redundancy_check.CRCError as error:
@@ -74,11 +86,13 @@ def should_continue(scan_message):
         serial_number = scan_message[3:-3]
         modbus_address = scan_message[-3]
         print(
-            "Found device with SN ",
-            "".join("{:02x}".format(x) for x in serial_number),
-            int.from_bytes(serial_number, byteorder="big", signed=False),
-            "modbus address ",
-            modbus_address,
+            "Found device with SN %d, modbus address %d, UART params <%d 8%s2>"
+            % (
+                int.from_bytes(serial_number, byteorder="big", signed=False),
+                modbus_address,
+                bd,
+                parity,
+            )
         )
         return True
 
@@ -100,22 +114,21 @@ def mqtt_client(name, broker):
         client.stop()
 
 
-def scan_bus(args):
+def scan_bus(args, bd, parity):
     with mqtt_client("modbus-scanner-rpc", args.mqtt_broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
 
-            response_message = start_scan(args.serial_port, rpc_client, args.timeout)
-            while should_continue(response_message):
-                response_message = continue_scan(args.serial_port, rpc_client, args.timeout)
+            response_message = start_scan(args.serial_port, bd, parity, rpc_client, args.timeout)
+            while should_continue(bd, parity, response_message):
+                response_message = continue_scan(args.serial_port, bd, parity, rpc_client, args.timeout)
 
         except rpcclient.TimeoutError as error:
             raise exceptions.RPCClientTimeoutError from error
 
         except rpcclient.MQTTRPCError as error:
             logger.debug("Options: %s", vars(args))
-            raise exceptions.RPCError(error.rpc_message, error.code, error.data) from error
 
 
 def parse_args(argv):
@@ -171,7 +184,8 @@ def main(argv=sys.argv):
     modbus_client.logger.setLevel(logger_level)
 
     try:
-        scan_bus(args)
+        for bd, parity in get_all_uart_params():
+            scan_bus(args, bd, parity)
         result_code = modbus_client.ResultCode.OK
     except exceptions.BrokerConnectionError:
         result_code = modbus_client.handle_brokerconnectionerror()
@@ -179,8 +193,6 @@ def main(argv=sys.argv):
         result_code = modbus_client.handle_rpcclienttimeouterror(args.timeout)
     except exceptions.ModbusParseError as error:
         result_code = modbus_client.handle_rpcumodbusparseerror(error)
-    except exceptions.RPCError as error:
-        result_code = modbus_client.handle_rpcerror(error)
 
     return result_code
 
