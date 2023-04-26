@@ -2,7 +2,7 @@ modbus-utils-rpc (1.1.7) stable; urgency=medium
 
   * modbus_scanner_rpc: scan on different port settings
 
- -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Min, 24 Apr 2023 17:21:00 +0400
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Mon, 24 Apr 2023 17:21:00 +0400
 
 modbus-utils-rpc (1.1.6) stable; urgency=medium
 
