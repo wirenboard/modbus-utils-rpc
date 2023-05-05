@@ -2,7 +2,6 @@
 
 #export DH_VERBOSE=1
 export PYBUILD_NAME=modbus-utils-rpc
-export PYBUILD_DESTDIR_python3=debian/python3-modbus-utils-rpc/
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild
