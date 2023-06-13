@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.2.1) stable; urgency=medium
+
+  * Fix deb package
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Mon, 12 Jun 2023 12:12:00 +0400
+
 modbus-utils-rpc (1.2.0) stable; urgency=medium
 
   * Rename deb package to modbus-utils-rpc
