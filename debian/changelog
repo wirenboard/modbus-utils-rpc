@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.2.3) stable; urgency=medium
+
+  * Add python3-tomli to build-deps (implicitly required by pytest)
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Mon, 24 Jul 2023 17:25:00 +0400
+
 modbus-utils-rpc (1.2.2) stable; urgency=medium
 
   * Fix PKG-INFO
