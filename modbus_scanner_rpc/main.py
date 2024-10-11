@@ -89,7 +89,7 @@ def should_continue(bd, parity, scan_message):
         serial_number = scan_message[3:-3]
         modbus_address = scan_message[-3]
         print(
-            f"Found device with SN {int.from_bytes(serial_number, byteorder="big", signed=False)}, "
+            f'Found device with SN {int.from_bytes(serial_number, byteorder="big", signed=False)}, '
             f"modbus address {modbus_address}, UART params <{bd} 8 {parity}>"
         )
         return True
