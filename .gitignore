@@ -5,3 +5,5 @@
 /env/
 /mqtt-rpc
 /uModbus
+.venv
+/tests/__pycache__/*

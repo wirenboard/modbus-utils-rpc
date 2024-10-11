@@ -12,6 +12,8 @@ from modbus_client_rpc import main as modbus_client
 
 logger = logging.getLogger(__name__)
 
+# pylint:disable=duplicate-code
+
 
 def remove_substring_prefix(prefix, string):
     while string.startswith(prefix):
@@ -23,7 +25,7 @@ def parse_hex_or_dec(data):
     return int(data, 0)
 
 
-def get_all_uart_params(
+def get_all_uart_params(  # pylint:disable=dangerous-default-value
     bds=[9600, 115200, 57600, 1200, 2400, 4800, 19200, 38400],
     parities=["N", "E", "O"],
 ):
@@ -60,8 +62,9 @@ def start_scan(serial_port, bd, parity, rpc_client, timeout):
 
 
 def continue_scan(serial_port, bd, parity, rpc_client, timeout):
-    """Send 60 command and 02 subcommand for scan continue. Devices respond sequentially with subcommand 03 on every 02 subcommand."""
-    """If not a single unasked device left, first device respond with 04 subcommand"""
+    """Send 60 command and 02 subcommand for scan continue.
+    Devices respond sequentially with subcommand 03 on every 02 subcommand.
+    If not a single unasked device left, first device respond with 04 subcommand"""
     rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout)
     logger.debug("Scan next")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
@@ -79,26 +82,22 @@ def should_continue(bd, parity, scan_message):
         raise exceptions.ModbusParseError(scan_message) from error
 
     if not scan_message.startswith(bytearray.fromhex("FD60")):
-        logger.error("Scan error while parsing answer", "".join("{:02x}".format(x) for x in scan_message))
+        logger.error("Scan error while parsing answer %s", "".join(f"{x:02x}" for x in scan_message))
         return False
 
     if scan_message[2] == 0x03:
         serial_number = scan_message[3:-3]
         modbus_address = scan_message[-3]
         print(
-            "Found device with SN %d, modbus address %d, UART params <%d 8%s2>"
-            % (
-                int.from_bytes(serial_number, byteorder="big", signed=False),
-                modbus_address,
-                bd,
-                parity,
-            )
+            f"Found device with SN {int.from_bytes(serial_number, byteorder="big", signed=False)}, "
+            f"modbus address {modbus_address}, UART params <{bd} 8 {parity}>"
         )
         return True
 
     if scan_message[2] == 0x04:
         logger.debug("Scan end")
         return False
+    return None
 
 
 @contextmanager
@@ -127,7 +126,7 @@ def scan_bus(args, bd, parity):
         except rpcclient.TimeoutError as error:
             raise exceptions.RPCClientTimeoutError from error
 
-        except rpcclient.MQTTRPCError as error:
+        except rpcclient.MQTTRPCError:
             logger.debug("Options: %s", vars(args))
 
 

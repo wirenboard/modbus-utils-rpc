@@ -2,13 +2,13 @@
 
 import sys
 
-ec = 1
+ec = 1  # pylint:disable=invalid-name
 
 try:
     from modbus_scanner_rpc.main import main
 
     ec = main(sys.argv)
 except KeyboardInterrupt:
-    ec = 0
+    ec = 0  # pylint:disable=invalid-name
 finally:
     sys.exit(ec)
