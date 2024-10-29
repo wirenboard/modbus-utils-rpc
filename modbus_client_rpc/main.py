@@ -43,12 +43,12 @@ def parse_parity_or_tcpport(data):
 
     if ret:
         return ret
-    else:
-        try:
-            return parse_hex_or_dec(data)
-        except ValueError as error:
-            logger.error("Invalid value %s for -p option. Set {none|even|odd} or port number", data)
-            raise error
+
+    try:
+        return parse_hex_or_dec(data)
+    except ValueError as error:
+        logger.error("Invalid value %s for -p option. Set {none|even|odd} or port number", data)
+        raise error
 
 
 def get_tcp_params(args):
@@ -65,7 +65,7 @@ def get_rtu_params(args):
     }
 
 
-def create_modbus_message(
+def create_modbus_message(  # pylint:disable=too-many-arguments
     lib, function, slave_address, address_decrement, start_address, read_count, write_data
 ):
     """Function accept modbus params and return tuple:
@@ -86,7 +86,7 @@ def create_modbus_message(
             functions.WRITE_MULTIPLE_COILS,
             functions.WRITE_MULTIPLE_REGISTERS,
         ):
-            logger.debug("Data to write: %s", "".join("0x{:02x} ".format(x) for x in write_data))
+            logger.debug("Data to write: %s", "".join(f"0x{x:02x} " for x in write_data))
 
         if function in (functions.WRITE_SINGLE_COIL, functions.WRITE_MULTIPLE_COILS):
             write_data = [0 if x == 0 else 1 for x in write_data]
@@ -108,9 +108,9 @@ def create_modbus_message(
         elif function == functions.WRITE_MULTIPLE_REGISTERS:
             message_byte = lib.write_multiple_registers(slave_address, start_address, write_data)
 
-        logger.debug("%s", "".join("[{:02x}]".format(x) for x in message_byte))
+        logger.debug("%s", "".join(f"[{x:02x}]" for x in message_byte))
 
-        message_str = "".join("{:02x}".format(x) for x in message_byte)
+        message_str = "".join(f"{x:02x}" for x in message_byte)
         response_size = lib.expected_response_size(message_byte)
 
     except (struct.error, umodbus.exceptions.ModbusError, IndexError) as error:
@@ -170,11 +170,8 @@ def parse_rpc_response(response):
     if "response" in response.keys():
         logger.debug("Response: %s", response["response"])
         return response["response"]
-    else:
-        logger.debug("Response: %s", response)
-        raise exceptions.RPCError(
-            "Parse error", RPCErrorCode.E_RPC_PARSE_ERROR, '"response" field is missing'
-        )
+    logger.debug("Response: %s", response)
+    raise exceptions.RPCError("Parse error", RPCErrorCode.E_RPC_PARSE_ERROR, '"response" field is missing')
 
 
 def parse_modbus_response(lib, function, request, response):
@@ -182,19 +179,19 @@ def parse_modbus_response(lib, function, request, response):
     try:
         response_byte = bytearray.fromhex(response)
 
-        logger.debug("%s", "".join("<{:02x}>".format(x) for x in response_byte))
+        logger.debug("%s", "".join(f"<{x:02x}>" for x in response_byte))
 
         data = lib.parse_response_adu(response_byte, bytearray.fromhex(request))
 
         if function in (functions.READ_COILS, functions.READ_DISCRETE_INPUTS):
 
             print("SUCCESS: read", len(data), "elements:")
-            print("\tData:", "".join("0x{:02x} ".format(x) for x in data))
+            print("\tData:", "".join(f"0x{x:02x} " for x in data))
 
         elif function in (functions.READ_HOLDING_REGISTERS, functions.READ_INPUT_REGISTERS):
 
             print("SUCCESS: read", len(data), "elements:")
-            print("\tData:", "".join("0x{:04x} ".format(x) for x in data))
+            print("\tData:", "".join(f"0x{x:04x} " for x in data))
 
         elif function in (functions.WRITE_SINGLE_COIL, functions.WRITE_SINGLE_REGISTER):
             print("SUCCESS: written 1 element")
@@ -212,12 +209,12 @@ def handle_rpcumodbusparameterserror(args):
     logger.error("\tStart address % d", args.start_addr)
     logger.error("\tStart address decrement: %r", args.address_decrement)
     logger.error("\tRead count % d", args.read_count)
-    logger.error("\tWrite data % s", tuple(args.write_data), exc_info=(logger.level <= logging.DEBUG))
+    logger.error("\tWrite data % s", tuple(args.write_data), exc_info=logger.level <= logging.DEBUG)
     return ResultCode.USER_INPUT_ERROR
 
 
 def handle_brokerconnectionerror():
-    logger.error("There is no connection with the broker", exc_info=(logger.level <= logging.DEBUG))
+    logger.error("There is no connection with the broker", exc_info=logger.level <= logging.DEBUG)
     return ResultCode.OPERATION_ERROR
 
 
@@ -228,7 +225,7 @@ def handle_rpcclienttimeouterror(timeout):
 
 def handle_rpcumodbusparseerror(error):
     logger.error("Error occurred while parsing modbus response:")
-    logger.error("%s", "".join("[{:02x}]".format(x) for x in bytearray.fromhex(error.modbus_message)))
+    logger.error("%s", "".join(f"[{x:02x}]" for x in bytearray.fromhex(error.modbus_message)))
     return ResultCode.OPERATION_ERROR
 
 

@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name, unused-import, unused-argument, line-too-long
 from argparse import Namespace
 
 import pytest
@@ -212,7 +213,7 @@ test_modbus_parameters = [
     "lib, function, slave_address, address_decrement, start_address, read_count, write_data, expected_message, expected_length,must_fail",
     test_modbus_parameters,
 )
-def test_create_modbus_message(
+def test_create_modbus_message(  # pylint:disable=too-many-arguments
     lib,
     function,
     slave_address,
@@ -305,7 +306,9 @@ def test_send_message(mocker, send_message_context):
     request_timeout = 1000
     args = {"mqtt_broker": "tcp://127.0.0.1:1883", "timeout": request_timeout}
 
-    def test_rpc_call(self, driver, service, method, params, timeout=None):
+    def test_rpc_call(  # pylint:disable=too-many-arguments
+        self, driver, service, method, params, timeout=None
+    ):
         assert (
             driver == "wb-mqtt-serial"
             and service == "port"
@@ -315,7 +318,7 @@ def test_send_message(mocker, send_message_context):
         )
         if must_fail == "MQTTRPCError":
             raise rpcclient.MQTTRPCError("message", 0, "data")
-        elif must_fail == "TimeoutError":
+        if must_fail == "TimeoutError":
             raise rpcclient.TimeoutError
 
         return expected_response
@@ -499,7 +502,7 @@ def test_main(mocker, main_context):
         assert argv == test_argv[1:]
         return test_options, []
 
-    def create_modbus_message(
+    def create_modbus_message(  # pylint:disable=too-many-arguments
         lib, function, slave_address, address_decrement, start_address, read_count, write_data
     ):
         if test_options.mode == "rtu":
@@ -517,9 +520,9 @@ def test_main(mocker, main_context):
     def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
         assert args == test_options
         if test_options.mode == "rtu":
-            assert get_port_params == main.get_rtu_params
+            assert get_port_params == main.get_rtu_params  # pylint:disable=comparison-with-callable
         else:
-            assert get_port_params == main.get_tcp_params
+            assert get_port_params == main.get_tcp_params  # pylint:disable=comparison-with-callable
         assert modbus_message == test_modbus_message
         assert response_size == test_response_size
         assert timeout == test_options.timeout
