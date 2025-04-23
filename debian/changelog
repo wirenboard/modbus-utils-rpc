@@ -1,3 +1,10 @@
+modbus-utils-rpc (1.2.5) stable; urgency=medium
+
+  * Fix lintian
+  * Adopt PEP440
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Wed, 23 Apr 2025 12:25:00 +0400
+
 modbus-utils-rpc (1.2.4) stable; urgency=medium
 
   * Enable angry pylint. No functional changes
