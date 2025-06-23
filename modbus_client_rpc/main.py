@@ -428,6 +428,10 @@ def parse_options(argv=sys.argv):
 
     return options, error_options
 
+def monkey_function():
+    print("123")
+    a = 55
+    return "Result"
 
 def main(argv=sys.argv):
 
