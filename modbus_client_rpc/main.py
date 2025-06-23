@@ -431,7 +431,7 @@ def parse_options(argv=sys.argv):
 def monkey_function():
     print("123")
     a = 55
-    return "Result"
+    return a
 
 def main(argv=sys.argv):
 
