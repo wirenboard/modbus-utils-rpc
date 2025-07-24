@@ -90,6 +90,7 @@ def _check_address(address):
             f"Start address {address} exceeds maximum allowed value of 65535."
         )
 
+
 def get_rpc_register_count(function, write_data, read_count):
     """Get the number of registers for the RPC call based on the function and data."""
 
@@ -105,6 +106,7 @@ def get_rpc_register_count(function, write_data, read_count):
         )
     return read_count
 
+
 def get_payload_for_write_coils(write_data):
     """Convert write data for WRITE_MULTIPLE_COILS function to a bitmask string."""
 
@@ -119,12 +121,14 @@ def get_payload_for_write_coils(write_data):
         payload_bytes.append(byte_val)
     return "".join(f"{x:02x}" for x in payload_bytes)
 
+
 def get_payload_for_single_coil(write_data):
     """Convert write data for WRITE_SINGLE_COIL function to RPC call payload."""
     if write_data[0] == 0:
         return "0000"
     else:
         return "ff00"
+
 
 def get_modbus_rpc_payload_and_count(  # pylint:disable=too-many-arguments
     function, address_decrement, start_address, read_count, write_data
