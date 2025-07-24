@@ -124,10 +124,7 @@ def get_payload_for_write_coils(write_data):
 
 def get_payload_for_single_coil(write_data):
     """Convert write data for WRITE_SINGLE_COIL function to RPC call payload."""
-    if write_data[0] == 0:
-        return "0000"
-    else:
-        return "ff00"
+    return "0000" if write_data[0] == 0 else "ff00"
 
 
 def get_modbus_rpc_payload_and_count(  # pylint:disable=too-many-arguments
