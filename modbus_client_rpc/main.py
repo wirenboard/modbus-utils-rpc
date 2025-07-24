@@ -166,7 +166,7 @@ def get_modbus_rpc_payload_and_count(  # pylint:disable=too-many-arguments
     return msg_payload, register_count
 
 
-def create_rpc_request(
+def create_rpc_request( # pylint:disable=too-many-arguments
     args, modbus_mode, get_port_params, slave_addr, function, start_addr, register_count, payload_str, timeout
 ):
     rpc_request = get_port_params(args)
