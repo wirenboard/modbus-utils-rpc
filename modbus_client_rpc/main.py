@@ -90,11 +90,46 @@ def _check_address(address):
             f"Start address {address} exceeds maximum allowed value of 65535."
         )
 
+def get_rpc_register_count(function, write_data, read_count):
+    """Get the number of registers for the RPC call based on the function and data."""
+
+    if function in (functions.WRITE_SINGLE_COIL, functions.WRITE_SINGLE_REGISTER):
+        return 1
+
+    if function in (functions.WRITE_MULTIPLE_COILS, functions.WRITE_MULTIPLE_REGISTERS):
+        return len(write_data)
+
+    if not isinstance(read_count, int) or read_count <= 0:
+        raise exceptions.ModbusParametersError(
+            f"Invalid read count: {read_count}. It must be a positive integer."
+        )
+    return read_count
+
+def get_payload_for_write_coils(write_data):
+    """Convert write data for WRITE_MULTIPLE_COILS function to a bitmask string."""
+
+    write_data = [0 if x == 0 else 1 for x in write_data]
+    # Pack bits into bytes as bitmask
+    payload_bytes = []
+    for i in range(0, len(write_data), 8):
+        byte_val = 0
+        for j in range(8):
+            if i + j < len(write_data) and write_data[i + j]:
+                byte_val |= 1 << j
+        payload_bytes.append(byte_val)
+    return "".join(f"{x:02x}" for x in payload_bytes)
+
+def get_payload_for_single_coil(write_data):
+    """Convert write data for WRITE_SINGLE_COIL function to RPC call payload."""
+    if write_data[0] == 0:
+        return "0000"
+    else:
+        return "ff00"
 
 def get_modbus_rpc_payload_and_count(  # pylint:disable=too-many-arguments
     function, address_decrement, start_address, read_count, write_data
 ):
-    """Function accept modbus params and return payload string for and register count for wb-mqtt-serial RPC call
+    """Function accept modbus params and return payload string and register count for wb-mqtt-serial RPC call
 
     Returns:
         string: message
@@ -104,7 +139,6 @@ def get_modbus_rpc_payload_and_count(  # pylint:disable=too-many-arguments
     _check_address(start_address)
 
     msg_payload = ""
-    register_count = 0
 
     if address_decrement:
         start_address -= 1
@@ -118,37 +152,13 @@ def get_modbus_rpc_payload_and_count(  # pylint:disable=too-many-arguments
         logger.debug("Data to write: %s", "".join(f"0x{x:02x} " for x in write_data))
 
     if function == functions.WRITE_SINGLE_COIL:
-        write_data = [0 if x == 0 else 1 for x in write_data]
-        # Convert single coil to bitmask
-        if write_data[0] == 0:
-            msg_payload = "0000"
-        else:
-            msg_payload = "ff00"
+        msg_payload = get_payload_for_single_coil(write_data)
     elif function == functions.WRITE_MULTIPLE_COILS:
-        write_data = [0 if x == 0 else 1 for x in write_data]
-        # Pack bits into bytes as bitmask
-        payload_bytes = []
-        for i in range(0, len(write_data), 8):
-            byte_val = 0
-            for j in range(8):
-                if i + j < len(write_data) and write_data[i + j]:
-                    byte_val |= 1 << j
-            payload_bytes.append(byte_val)
-        msg_payload = "".join(f"{x:02x}" for x in payload_bytes)
+        msg_payload = get_payload_for_write_coils(write_data)
     else:
         msg_payload = "".join(f"{x:04x}" for x in write_data)
 
-    if function in (functions.WRITE_SINGLE_COIL, functions.WRITE_SINGLE_REGISTER):
-        register_count = 1
-    elif function in (functions.WRITE_MULTIPLE_COILS, functions.WRITE_MULTIPLE_REGISTERS):
-        register_count = len(write_data)
-    else:
-        if not isinstance(read_count, int) or read_count <= 0:
-            raise exceptions.ModbusParametersError(
-                f"Invalid read count: {read_count}. It must be a positive integer."
-            )
-        register_count = read_count
-
+    register_count = get_rpc_register_count(function, write_data, read_count)
     return msg_payload, register_count
 
 
@@ -383,8 +393,11 @@ def parse_options(argv=sys.argv):
     )
     parser.add_argument(
         "-t",
-        help="""Function type:
-(0x01) Read Coils, (0x02) Read Discrete Inputs, (0x05) Write Single Coil, (0x03) Read Holding Registers, (0x04) Read Input Registers, (0x06) Write Single Register, (0x0F) Write Multiple Coils, (0x10) Write Multiple Registers""",
+        help=(
+            "Function type: (0x01) Read Coils, (0x02) Read Discrete Inputs, (0x05) Write Single Coil, "
+            "(0x03) Read Holding Registers, (0x04) Read Input Registers, (0x06) Write Single Register, "
+            "(0x0F) Write Multiple Coils, (0x10) Write Multiple Registers"
+        ),
         type=parse_hex_or_dec,
         choices=[
             functions.READ_COILS,

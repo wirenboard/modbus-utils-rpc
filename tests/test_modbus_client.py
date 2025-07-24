@@ -422,7 +422,7 @@ def test_main(mocker, main_context):
         assert write_data == test_options.write_data
         return test_payload_str, test_register_count
 
-    def create_rpc_request(
+    def create_rpc_request(  # pylint:disable=too-many-arguments
         args,
         modbus_mode,
         get_port_params,
