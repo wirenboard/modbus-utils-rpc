@@ -9,242 +9,126 @@ from modbus_client_rpc import main
 
 test_modbus_parameters = [
     (
-        main.rtu,
         0x01,
-        0,
         False,
         0,
         1,
         [],
-        "000100000001fc1b",
-        6,
+        "",
+        1,
         False,
     ),
     (
-        main.rtu,
         0x02,
-        247,
         False,
         65535,
         1,
         [],
-        "f702ffff0001ad78",
-        6,
+        "",
+        1,
         False,
     ),
     (
-        main.rtu,
         0x03,
-        0,
         False,
         0,
         125,
         [],
-        "00030000007d843a",
-        255,
-        False,
-    ),
-    (
-        main.rtu,
-        0x04,
-        247,
-        True,
-        65535,
-        2,
-        [],
-        "f704fffe000234b9",
-        9,
-        False,
-    ),
-    (
-        main.rtu,
-        0x05,
-        0,
-        False,
-        65535,
-        0,
-        [255],
-        "0005ffffff008dcf",
-        8,
-        False,
-    ),
-    (
-        main.rtu,
-        0x06,
-        247,
-        True,
-        65535,
-        0,
-        [22950],
-        "f706fffe59a67692",
-        8,
-        False,
-    ),
-    (
-        main.rtu,
-        0x0F,
-        0,
-        False,
-        0,
-        0,
-        [0, 255, 0, 100, 0, 50],
-        "000f00000006012adf45",
-        8,
-        False,
-    ),
-    (
-        main.rtu,
-        0x10,
-        247,
-        False,
-        65533,
-        0,
-        [22950, 15406, 4658],
-        "f710fffd00030659a63c2e1232ed65",
-        8,
-        False,
-    ),
-    (
-        main.tcp,
-        0x01,
-        0,
-        False,
-        0,
-        1,
-        [],
-        "000000000006000100000001",
-        10,
-        False,
-    ),
-    (
-        main.tcp,
-        0x02,
-        247,
-        False,
-        65535,
-        1,
-        [],
-        "000000000006f702ffff0001",
-        10,
-        False,
-    ),
-    (
-        main.tcp,
-        0x03,
-        0,
-        False,
-        0,
+        "",
         125,
-        [],
-        "00000000000600030000007d",
-        259,
         False,
     ),
     (
-        main.tcp,
         0x04,
-        247,
         True,
         65535,
         2,
         [],
-        "000000000006f704fffe0002",
-        13,
+        "",
+        2,
         False,
     ),
     (
-        main.tcp,
         0x05,
-        0,
         False,
         65535,
         0,
         [255],
-        "0000000000060005ffffff00",
-        12,
+        "ff00",
+        1,
         False,
     ),
     (
-        main.tcp,
         0x06,
-        247,
         True,
         65535,
         0,
         [22950],
-        "000000000006f706fffe59a6",
-        12,
+        "59a6",
+        1,
         False,
     ),
     (
-        main.tcp,
         0x0F,
-        0,
         False,
         0,
         0,
         [0, 255, 0, 100, 0, 50],
-        "000000000008000f00000006012a",
-        12,
+        "2a",
+        6,
         False,
     ),
     (
-        main.tcp,
         0x10,
-        247,
         False,
         65533,
         0,
         [22950, 15406, 4658],
-        "00000000000df710fffd00030659a63c2e1232",
-        12,
+        "59a63c2e1232",
+        3,
         False,
     ),
-    (main.rtu, 0x07, 0, False, 0, 0, [], "", 0, True),
-    (main.rtu, 0x01, 250, False, 0, 0, [], "", 0, True),
-    (main.rtu, 0x01, 0, False, 65536, 0, [], "", 0, True),
-    (main.rtu, 0x01, 0, True, 0, 0, [], "", 0, True),
-    (main.rtu, 0x01, 0, True, 0, 126, [], "", 0, True),
-    (main.rtu, 0x01, 0, True, 0, 0, [], "", 0, True),
+    (0x07, False, 0, 0, [], "", 0, True),
+    (0x01, False, 0, 0, [], "", 0, True),
+    (0x01, False, 65536, 0, [], "", 0, True),
+    (0x01, True, 0, 0, [], "", 0, True),
+    (0x01, True, 0, 126, [], "", 126, False),  # it's fun, but reading 125 *coils* is actually allowed
+    (0x01, True, 0, 0, [], "", 0, True),
 ]
 
 
 @pytest.mark.parametrize(
-    "lib, function, slave_address, address_decrement, start_address, read_count, write_data, expected_message, expected_length,must_fail",
+    "function, address_decrement, start_address, read_count, write_data, expected_rpc_payload, expected_rpc_count,must_fail",
     test_modbus_parameters,
 )
-def test_create_modbus_message(  # pylint:disable=too-many-arguments
-    lib,
+def test_get_modbus_rpc_payload(  # pylint:disable=too-many-arguments
     function,
-    slave_address,
     address_decrement,
     start_address,
     read_count,
     write_data,
-    expected_message,
-    expected_length,
+    expected_rpc_payload,
+    expected_rpc_count,
     must_fail,
 ):
 
     if must_fail:
         with pytest.raises(Exception):
-            message, length = main.create_modbus_message(
-                lib, function, slave_address, address_decrement, start_address, read_count, write_data
+            message, length = main.get_modbus_rpc_payload_and_count(
+                function, address_decrement, start_address, read_count, write_data
             )
     else:
-        message, length = main.create_modbus_message(
-            lib, function, slave_address, address_decrement, start_address, read_count, write_data
+        message, length = main.get_modbus_rpc_payload_and_count(
+            function, address_decrement, start_address, read_count, write_data
         )
-
-        if lib == main.rtu:
-            assert (expected_message, expected_length) == (message, length)
-        elif lib == main.tcp:
-            assert (expected_message[4:], expected_length) == (message[4:], length)
+        assert (expected_rpc_payload, expected_rpc_count) == (message, length)
 
 
 test_rpc_param = [
     (
         main.get_rtu_params,
+        "rtu",
+        "modbus",
         {
             "serialport_host": "rtu_path",
             "baudrate": 9600,
@@ -262,17 +146,31 @@ test_rpc_param = [
     ),
     (
         main.get_tcp_params,
+        "tcp",
+        "modbus-tcp",
+        {"serialport_host": "tcp_path", "parity_port": 1000},
+        {"ip": "tcp_path", "port": 1000},
+    ),
+    (
+        main.get_tcp_params,
+        "rtuovertcp",
+        "modbus",
         {"serialport_host": "tcp_path", "parity_port": 1000},
         {"ip": "tcp_path", "port": 1000},
     ),
 ]
 
 
-@pytest.mark.parametrize("get_path_function, options, expected_path", test_rpc_param)
-def test_create_rpc_request(get_path_function, options, expected_path):
-    test_message = "message"
-    test_response_size = 10
-    test_timeout = 10000
+@pytest.mark.parametrize(
+    "get_path_function, modbus_mode, rpc_protocol, options, expected_path", test_rpc_param
+)
+def test_create_rpc_request(get_path_function, modbus_mode, rpc_protocol, options, expected_path):
+    test_message = "01020304"
+    test_slave_addr = 123
+    test_func_type = 0x10
+    test_start_addr = 200
+    test_register_count = 2
+    test_timeout = 5000
 
     def test_get_path_function(options):
         path = get_path_function(options)
@@ -280,10 +178,25 @@ def test_create_rpc_request(get_path_function, options, expected_path):
         return path
 
     request = main.create_rpc_request(
-        Namespace(**options), test_get_path_function, test_message, test_response_size, test_timeout
+        Namespace(**options),
+        modbus_mode,
+        test_get_path_function,
+        test_slave_addr,
+        test_func_type,
+        test_start_addr,
+        test_register_count,
+        test_message,
+        test_timeout,
     )
 
-    assert (request["format"], request["msg"], request["response_size"]) == ("HEX", "message", 10)
+    assert request["format"] == "HEX"
+    assert request["msg"] == test_message
+    assert request["slave_id"] == test_slave_addr
+    assert request["function"] == test_func_type
+    assert request["address"] == test_start_addr
+    assert request["count"] == test_register_count
+    assert request["protocol"] == rpc_protocol
+    assert request["total_timeout"] == test_timeout
 
 
 test_send_message_params = [
@@ -370,18 +283,18 @@ def test_parse_rpc_response(rpc_response, must_fail):
 
 
 test_modbus_response_params = [
-    (main.rtu, 0x01, "1604010e000152d2", "160402fe348c84", False),
-    (main.rtu, 0x01, "1604010e000152d2", "160402fe348c80", True),
+    (0x01, 8, "fe34", False),
+    (0x03, 2, "000a0000", False),
 ]
 
 
-@pytest.mark.parametrize("lib, function, modrequest, response, must_fail", test_modbus_response_params)
-def test_parse_modbus_response(lib, function, modrequest, response, must_fail):
+@pytest.mark.parametrize("function, register_count, response, must_fail", test_modbus_response_params)
+def test_parse_modbus_response(function, register_count, response, must_fail):
     if must_fail:
         with pytest.raises(Exception):
-            main.parse_modbus_response(lib, function, modrequest, response)
+            main.parse_modbus_response(function, register_count, response)
     else:
-        main.parse_modbus_response(lib, function, modrequest, response)
+        main.parse_modbus_response(function, register_count, response)
 
 
 test_argv_params_positive = [
@@ -492,39 +405,44 @@ def test_main(mocker, main_context):
     test_argv = main_context[0]
     test_options = main_context[1]
 
-    test_modbus_message = [0x01, 0x02, 0x03]
-    test_response_size = 5
+    test_payload_str = "01020304"
+    test_register_count = 5
     test_rpc_request = {"message": "request"}
-    test_rpc_response = {"message": "response"}
-    test_modbus_response = [0x04, 0x05, 0x06]
+    test_rpc_response = {"response": "040506"}
 
     def parse_options(argv):
         assert argv == test_argv[1:]
         return test_options, []
 
-    def create_modbus_message(  # pylint:disable=too-many-arguments
-        lib, function, slave_address, address_decrement, start_address, read_count, write_data
-    ):
-        if test_options.mode == "rtu":
-            assert lib == main.rtu
-        else:
-            assert lib == main.tcp
+    def get_modbus_rpc_payload_and_count(function, address_decrement, start_address, read_count, write_data):
         assert function == test_options.func_type
-        assert slave_address == test_options.slave_addr
         assert address_decrement == test_options.address_decrement
         assert start_address == test_options.start_addr
         assert read_count == test_options.read_count
         assert write_data == test_options.write_data
-        return test_modbus_message, test_response_size
+        return test_payload_str, test_register_count
 
-    def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
+    def create_rpc_request(
+        args,
+        modbus_mode,
+        get_port_params,
+        slave_addr,
+        function,
+        start_addr,
+        register_count,
+        payload_str,
+        timeout,
+    ):
         assert args == test_options
         if test_options.mode == "rtu":
             assert get_port_params == main.get_rtu_params  # pylint:disable=comparison-with-callable
         else:
             assert get_port_params == main.get_tcp_params  # pylint:disable=comparison-with-callable
-        assert modbus_message == test_modbus_message
-        assert response_size == test_response_size
+        assert slave_addr == test_options.slave_addr
+        assert function == test_options.func_type
+        assert start_addr == test_options.start_addr
+        assert register_count == test_register_count
+        assert payload_str == test_payload_str
         assert timeout == test_options.timeout
         return test_rpc_request
 
@@ -537,19 +455,15 @@ def test_main(mocker, main_context):
 
     def parse_rpc_response(response):
         assert response == test_rpc_response
-        return test_modbus_response
+        return "040506"
 
-    def parse_modbus_response(lib, function, request, response):
-        if test_options.mode == "rtu":
-            assert lib == main.rtu
-        else:
-            assert lib == main.tcp
+    def parse_modbus_response(function, register_count, response):
         assert function == test_options.func_type
-        assert request == test_modbus_message
-        assert response == test_modbus_response
+        assert register_count == test_register_count
+        assert response == "040506"
 
     mocker.patch("modbus_client_rpc.main.parse_options", parse_options)
-    mocker.patch("modbus_client_rpc.main.create_modbus_message", create_modbus_message)
+    mocker.patch("modbus_client_rpc.main.get_modbus_rpc_payload_and_count", get_modbus_rpc_payload_and_count)
     mocker.patch("modbus_client_rpc.main.create_rpc_request", create_rpc_request)
     mocker.patch("modbus_client_rpc.main.send_message", send_message)
     mocker.patch("modbus_client_rpc.main.parse_rpc_response", parse_rpc_response)
