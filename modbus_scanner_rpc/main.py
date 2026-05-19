@@ -37,8 +37,10 @@ def get_all_uart_params(  # pylint:disable=dangerous-default-value
             yield bd, parity
 
 
-def create_rpc_request(serial_port, bd, parity, modbus_message, timeout):
-    return {
+def create_rpc_request(  # pylint:disable=too-many-arguments
+    serial_port, bd, parity, modbus_message, timeout, response_timeout=None
+):
+    rpc_request = {
         "path": serial_port,
         "baud_rate": bd,
         "parity": parity,
@@ -49,11 +51,16 @@ def create_rpc_request(serial_port, bd, parity, modbus_message, timeout):
         "msg": modbus_message,
         "total_timeout": timeout,
     }
+    if response_timeout is not None:
+        rpc_request["response_timeout"] = response_timeout
+    return rpc_request
 
 
-def start_scan(serial_port, bd, parity, rpc_client, timeout):
+def start_scan(  # pylint:disable=too-many-arguments
+    serial_port, bd, parity, rpc_client, timeout, response_timeout=None
+):
     """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
-    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout)
+    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout, response_timeout)
     logger.debug("Scan init")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
     rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
@@ -61,11 +68,13 @@ def start_scan(serial_port, bd, parity, rpc_client, timeout):
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
 
-def continue_scan(serial_port, bd, parity, rpc_client, timeout):
+def continue_scan(  # pylint:disable=too-many-arguments
+    serial_port, bd, parity, rpc_client, timeout, response_timeout=None
+):
     """Send 60 command and 02 subcommand for scan continue.
     Devices respond sequentially with subcommand 03 on every 02 subcommand.
     If not a single unasked device left, first device respond with 04 subcommand"""
-    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout)
+    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout, response_timeout)
     logger.debug("Scan next")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
     rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
@@ -119,9 +128,13 @@ def scan_bus(args, bd, parity):
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
 
-            response_message = start_scan(args.serial_port, bd, parity, rpc_client, args.timeout)
+            response_message = start_scan(
+                args.serial_port, bd, parity, rpc_client, args.timeout, args.response_timeout
+            )
             while should_continue(bd, parity, response_message):
-                response_message = continue_scan(args.serial_port, bd, parity, rpc_client, args.timeout)
+                response_message = continue_scan(
+                    args.serial_port, bd, parity, rpc_client, args.timeout, args.response_timeout
+                )
 
         except rpcclient.TimeoutError as error:
             raise exceptions.RPCClientTimeoutError from error
@@ -160,6 +173,14 @@ def parse_args(argv):
         type=parse_hex_or_dec,
         default=10000,
         dest="timeout",
+        required=False,
+    )
+    parser.add_argument(
+        "--response-timeout",
+        help="Response timeout, ms (passed to wb-mqtt-serial RPC)",
+        type=parse_hex_or_dec,
+        default=None,
+        dest="response_timeout",
         required=False,
     )
     return parser.parse_args(argv)

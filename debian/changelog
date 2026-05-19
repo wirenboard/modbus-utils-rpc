@@ -1,3 +1,9 @@
+modbus-utils-rpc (1.3.0) stable; urgency=medium
+
+  * Add response_timeout parameter to modbus_client_rpc
+
+ -- Petr Krasnoshchekov <petr.krasnoshchekov@wirenboard.com>  Tue, 19 May 2026 19:29:06 +0500
+
 modbus-utils-rpc (1.2.5) stable; urgency=medium
 
   * Fix lintian
