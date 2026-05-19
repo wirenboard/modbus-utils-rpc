@@ -37,7 +37,9 @@ def get_all_uart_params(  # pylint:disable=dangerous-default-value
             yield bd, parity
 
 
-def create_rpc_request(serial_port, bd, parity, modbus_message, timeout, response_timeout=None):
+def create_rpc_request(  # pylint:disable=too-many-arguments
+    serial_port, bd, parity, modbus_message, timeout, response_timeout=None
+):
     rpc_request = {
         "path": serial_port,
         "baud_rate": bd,
@@ -54,7 +56,9 @@ def create_rpc_request(serial_port, bd, parity, modbus_message, timeout, respons
     return rpc_request
 
 
-def start_scan(serial_port, bd, parity, rpc_client, timeout, response_timeout=None):
+def start_scan(  # pylint:disable=too-many-arguments
+    serial_port, bd, parity, rpc_client, timeout, response_timeout=None
+):
     """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
     rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout, response_timeout)
     logger.debug("Scan init")
@@ -64,7 +68,9 @@ def start_scan(serial_port, bd, parity, rpc_client, timeout, response_timeout=No
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
 
-def continue_scan(serial_port, bd, parity, rpc_client, timeout, response_timeout=None):
+def continue_scan(  # pylint:disable=too-many-arguments
+    serial_port, bd, parity, rpc_client, timeout, response_timeout=None
+):
     """Send 60 command and 02 subcommand for scan continue.
     Devices respond sequentially with subcommand 03 on every 02 subcommand.
     If not a single unasked device left, first device respond with 04 subcommand"""
