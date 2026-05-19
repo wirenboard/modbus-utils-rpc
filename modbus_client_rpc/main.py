@@ -119,7 +119,9 @@ def create_modbus_message(  # pylint:disable=too-many-arguments
     return message_str, response_size
 
 
-def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
+def create_rpc_request(
+    args, get_port_params, modbus_message, response_size, timeout, response_timeout=None
+):
     rpc_request = get_port_params(args)
     rpc_request.update(
         {
@@ -129,6 +131,8 @@ def create_rpc_request(args, get_port_params, modbus_message, response_size, tim
             "total_timeout": timeout,
         }
     )
+    if response_timeout is not None:
+        rpc_request["response_timeout"] = response_timeout
     return rpc_request
 
 
@@ -252,7 +256,12 @@ def process_request(args, lib, get_port_params):
         )
 
         rpc_request = create_rpc_request(
-            args, get_port_params, modbus_msg_str, modbus_resp_size, args.timeout
+            args,
+            get_port_params,
+            modbus_msg_str,
+            modbus_resp_size,
+            args.timeout,
+            args.response_timeout,
         )
 
         rpc_response = send_message(args, args.mqtt_broker, rpc_request, args.timeout)
@@ -343,6 +352,14 @@ def parse_options(argv=sys.argv):
         type=parse_hex_or_dec,
         default=1000,
         dest="timeout",
+        required=False,
+    )
+    parser.add_argument(
+        "--response-timeout",
+        help="Response timeout, ms (passed to wb-mqtt-serial RPC)",
+        type=parse_hex_or_dec,
+        default=None,
+        dest="response_timeout",
         required=False,
     )
     parser.add_argument(

@@ -407,6 +407,7 @@ test_argv_params_positive = [
             start_addr=120,
             func_type=6,
             timeout=1000,
+            response_timeout=None,
             address_decrement=False,
             baudrate=9600,
             data_bits=8,
@@ -428,6 +429,7 @@ test_argv_params_positive = [
             start_addr=5,
             func_type=1,
             timeout=100,
+            response_timeout=None,
             address_decrement=True,
             baudrate=9600,
             data_bits=8,
@@ -449,6 +451,7 @@ test_argv_params_positive = [
             start_addr=10,
             func_type=5,
             timeout=1000,
+            response_timeout=None,
             address_decrement=False,
             baudrate=9600,
             data_bits=8,
@@ -517,7 +520,9 @@ def test_main(mocker, main_context):
         assert write_data == test_options.write_data
         return test_modbus_message, test_response_size
 
-    def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout):
+    def create_rpc_request(  # pylint:disable=too-many-arguments
+        args, get_port_params, modbus_message, response_size, timeout, response_timeout=None
+    ):
         assert args == test_options
         if test_options.mode == "rtu":
             assert get_port_params == main.get_rtu_params  # pylint:disable=comparison-with-callable
@@ -526,6 +531,7 @@ def test_main(mocker, main_context):
         assert modbus_message == test_modbus_message
         assert response_size == test_response_size
         assert timeout == test_options.timeout
+        assert response_timeout == test_options.response_timeout
         return test_rpc_request
 
     def send_message(args, broker, message, timeout):

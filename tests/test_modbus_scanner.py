@@ -7,11 +7,23 @@ from modbus_scanner_rpc import main
 working_args_parsing_cases = [
     (
         ["--debug", "--broker", "127.0.0.1", "-o", "100", "/dev/ttyRS485-1"],
-        Namespace(debug=True, mqtt_broker="127.0.0.1", timeout=100, serial_port="/dev/ttyRS485-1"),
+        Namespace(
+            debug=True,
+            mqtt_broker="127.0.0.1",
+            timeout=100,
+            response_timeout=None,
+            serial_port="/dev/ttyRS485-1",
+        ),
     ),
     (
         ["--broker", "127.0.0.1", "-o", "100", "/dev/ttyRS485-1"],
-        Namespace(debug=False, mqtt_broker="127.0.0.1", timeout=100, serial_port="/dev/ttyRS485-1"),
+        Namespace(
+            debug=False,
+            mqtt_broker="127.0.0.1",
+            timeout=100,
+            response_timeout=None,
+            serial_port="/dev/ttyRS485-1",
+        ),
     ),
     (
         ["-o", "100", "/dev/ttyRS485-1"],
@@ -19,6 +31,7 @@ working_args_parsing_cases = [
             debug=False,
             mqtt_broker="unix:///var/run/mosquitto/mosquitto.sock",
             timeout=100,
+            response_timeout=None,
             serial_port="/dev/ttyRS485-1",
         ),
     ),
@@ -30,6 +43,17 @@ working_args_parsing_cases = [
             debug=False,
             mqtt_broker="unix:///var/run/mosquitto/mosquitto.sock",
             timeout=10000,
+            response_timeout=None,
+            serial_port="/dev/ttyRS485-1",
+        ),
+    ),
+    (
+        ["--response-timeout", "250", "/dev/ttyRS485-1"],
+        Namespace(
+            debug=False,
+            mqtt_broker="unix:///var/run/mosquitto/mosquitto.sock",
+            timeout=10000,
+            response_timeout=250,
             serial_port="/dev/ttyRS485-1",
         ),
     ),
