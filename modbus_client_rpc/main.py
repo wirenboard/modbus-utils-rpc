@@ -119,9 +119,7 @@ def create_modbus_message(  # pylint:disable=too-many-arguments
     return message_str, response_size
 
 
-def create_rpc_request(
-    args, get_port_params, modbus_message, response_size, timeout, response_timeout=None
-):
+def create_rpc_request(args, get_port_params, modbus_message, response_size, timeout, response_timeout=None):
     rpc_request = get_port_params(args)
     rpc_request.update(
         {
