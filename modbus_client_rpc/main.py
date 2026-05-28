@@ -65,7 +65,7 @@ def get_rtu_params(args):
     }
 
 
-def create_modbus_message(  # pylint:disable=too-many-arguments
+def create_modbus_message(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     lib, function, slave_address, address_decrement, start_address, read_count, write_data
 ):
     """Function accept modbus params and return tuple:
@@ -119,7 +119,7 @@ def create_modbus_message(  # pylint:disable=too-many-arguments
     return message_str, response_size
 
 
-def create_rpc_request(  # pylint:disable=too-many-arguments
+def create_rpc_request(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     args, get_port_params, modbus_message, response_size, timeout, response_timeout=None
 ):
     rpc_request = get_port_params(args)
