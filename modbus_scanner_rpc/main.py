@@ -37,7 +37,7 @@ def get_all_uart_params(  # pylint:disable=dangerous-default-value
             yield bd, parity
 
 
-def create_rpc_request(  # pylint:disable=too-many-arguments
+def create_rpc_request(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     serial_port, bd, parity, modbus_message, timeout, response_timeout=None
 ):
     rpc_request = {
@@ -56,7 +56,7 @@ def create_rpc_request(  # pylint:disable=too-many-arguments
     return rpc_request
 
 
-def start_scan(  # pylint:disable=too-many-arguments
+def start_scan(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     serial_port, bd, parity, rpc_client, timeout, response_timeout=None
 ):
     """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
@@ -68,7 +68,7 @@ def start_scan(  # pylint:disable=too-many-arguments
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
 
-def continue_scan(  # pylint:disable=too-many-arguments
+def continue_scan(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     serial_port, bd, parity, rpc_client, timeout, response_timeout=None
 ):
     """Send 60 command and 02 subcommand for scan continue.

@@ -213,7 +213,7 @@ test_modbus_parameters = [
     "lib, function, slave_address, address_decrement, start_address, read_count, write_data, expected_message, expected_length,must_fail",
     test_modbus_parameters,
 )
-def test_create_modbus_message(  # pylint:disable=too-many-arguments
+def test_create_modbus_message(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     lib,
     function,
     slave_address,
@@ -306,7 +306,7 @@ def test_send_message(mocker, send_message_context):
     request_timeout = 1000
     args = {"mqtt_broker": "tcp://127.0.0.1:1883", "timeout": request_timeout}
 
-    def test_rpc_call(  # pylint:disable=too-many-arguments
+    def test_rpc_call(  # pylint:disable=too-many-arguments,too-many-positional-arguments
         self, driver, service, method, params, timeout=None
     ):
         assert (
@@ -505,7 +505,7 @@ def test_main(mocker, main_context):
         assert argv == test_argv[1:]
         return test_options, []
 
-    def create_modbus_message(  # pylint:disable=too-many-arguments
+    def create_modbus_message(  # pylint:disable=too-many-arguments,too-many-positional-arguments
         lib, function, slave_address, address_decrement, start_address, read_count, write_data
     ):
         if test_options.mode == "rtu":
@@ -520,7 +520,7 @@ def test_main(mocker, main_context):
         assert write_data == test_options.write_data
         return test_modbus_message, test_response_size
 
-    def create_rpc_request(  # pylint:disable=too-many-arguments
+    def create_rpc_request(  # pylint:disable=too-many-arguments,too-many-positional-arguments
         args, get_port_params, modbus_message, response_size, timeout, response_timeout=None
     ):
         assert args == test_options
