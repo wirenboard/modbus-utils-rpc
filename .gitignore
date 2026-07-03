@@ -6,4 +6,5 @@
 /mqtt-rpc
 /uModbus
 .venv
-/tests/__pycache__/*
+__pycache__/
+*.egg-info/

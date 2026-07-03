@@ -1,2 +1,3 @@
 bin/modbus_client_rpc /usr/bin
 bin/modbus_scanner_rpc /usr/bin
+completions/*.bash /usr/share/bash-completion/completions

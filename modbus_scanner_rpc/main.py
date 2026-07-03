@@ -143,7 +143,7 @@ def scan_bus(args, bd, parity):
             logger.debug("Options: %s", vars(args))
 
 
-def parse_args(argv):
+def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--debug",
@@ -183,11 +183,12 @@ def parse_args(argv):
         dest="response_timeout",
         required=False,
     )
-    return parser.parse_args(argv)
+    return parser
 
 
 def main(argv=sys.argv):
-    args = parse_args(argv[1:])
+    parser = get_parser()
+    args = parser.parse_args(argv[1:])
 
     if args.debug:
         logger_level = logging.DEBUG

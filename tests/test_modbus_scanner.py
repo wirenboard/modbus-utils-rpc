@@ -80,12 +80,14 @@ erroneous_args_parsing_cases = [
 
 @pytest.mark.parametrize("argv, expected_options", working_args_parsing_cases)
 def test_parse_options_positive(argv, expected_options):
-    options = main.parse_args(argv)
+    parser = main.get_parser()
+    options = parser.parse_args(argv)
     assert options == expected_options
 
 
 @pytest.mark.parametrize("argv, expected_options", erroneous_args_parsing_cases)
 def test_parse_options_erroneous(argv, expected_options):
     with pytest.raises(SystemExit):
-        options = main.parse_args(argv)
+        parser = main.get_parser()
+        options = parser.parse_args(argv)
         assert options == expected_options
