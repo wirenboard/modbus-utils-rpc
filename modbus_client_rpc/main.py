@@ -286,8 +286,7 @@ def process_request(args, lib, get_port_params):
     return result_code
 
 
-def parse_options(argv=sys.argv):
-
+def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--debug",
@@ -434,6 +433,11 @@ def parse_options(argv=sys.argv):
         help="Data to write",
     )
 
+    return parser
+
+
+def parse_options(argv=sys.argv):
+    parser = get_parser()
     options, unknown_options = parser.parse_known_args(argv)
 
     error_options = []
