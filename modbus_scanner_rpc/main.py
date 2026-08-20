@@ -63,7 +63,7 @@ def start_scan(  # pylint:disable=too-many-arguments,too-many-positional-argumen
     rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout, response_timeout)
     logger.debug("Scan init")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
-    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
+    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout / 1000)
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
@@ -77,7 +77,7 @@ def continue_scan(  # pylint:disable=too-many-arguments,too-many-positional-argu
     rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout, response_timeout)
     logger.debug("Scan next")
     logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
-    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
+    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout / 1000)
     logger.debug("RPC Client <- %s", rpc_response)
 
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
@@ -144,7 +144,7 @@ def scan_bus(args, bd, parity):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--debug",
         help="Enable debug output",

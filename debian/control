@@ -7,12 +7,11 @@ Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3,
                python3-setuptools,
-               python3-pytest,
                python3-umodbus (>=1.0.4-1+wb1),
                python3-wb-common (>=2.1.0),
-               python3-mqttrpc(>=1.1.2),
-               python3-pytest-mock,
-               python3-tomli
+               python3-mqttrpc (>=1.1.2),
+               python3-pytest <!nocheck>,
+               python3-pytest-mock <!nocheck>
 Standards-Version: 3.9.1
 Homepage: https://github.com/wirenboard/modbus-utils-rpc
 
@@ -25,7 +24,7 @@ Depends: ${python3:Depends},
          ${misc:Depends},
          python3-umodbus (>=1.0.4-1+wb1),
          python3-wb-common (>=2.1.0),
-         python3-mqttrpc(>=1.1.2),
+         python3-mqttrpc (>=1.1.2),
          wb-mqtt-serial (>=2.74.0~~)
 Description: Wiren Board modbus utility using RPC (python 3)
  A command-line tool used for modbus RPC requests to wb-mqtt-serial.
