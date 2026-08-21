@@ -91,3 +91,19 @@ def test_parse_options_erroneous(argv, expected_options):
         parser = main.get_parser()
         options = parser.parse_args(argv)
         assert options == expected_options
+
+
+@pytest.mark.parametrize("scan_function", [main.start_scan, main.continue_scan])
+def test_scan_timeout_units(scan_function):
+    """mqttrpc waits in seconds, wb-mqtt-serial's total_timeout is in ms"""
+    calls = []
+
+    def rpc_call(_driver, _service, _method, params, timeout=None):
+        calls.append((params, timeout))
+        return {"response": "fd6004c9f3"}
+
+    scan_function("/dev/ttyRS485-1", 9600, "N", Namespace(call=rpc_call), 10000)
+
+    params, timeout = calls[0]
+    assert timeout == 10
+    assert params["total_timeout"] == 10000

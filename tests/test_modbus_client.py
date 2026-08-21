@@ -5,7 +5,7 @@ import pytest
 from mqttrpc import client as rpcclient
 from pytest_mock import mocker
 
-from modbus_client_rpc import main
+from modbus_client_rpc import exceptions, main
 
 test_modbus_parameters = [
     (
@@ -371,17 +371,29 @@ def test_parse_rpc_response(rpc_response, must_fail):
 
 test_modbus_response_params = [
     (main.rtu, 0x01, "1604010e000152d2", "160402fe348c84", False),
+    # corrupted CRC: umodbus raises CRCError, which is not a ModbusError
     (main.rtu, 0x01, "1604010e000152d2", "160402fe348c80", True),
+    # device answers with modbus exception 02, illegal data address
+    (main.rtu, 0x04, "1604010e000152d2", "16840272c5", True),
+    # frame cut short mid-flight
+    (main.rtu, 0x04, "1604010e000152d2", "1684", True),
 ]
 
 
 @pytest.mark.parametrize("lib, function, modrequest, response, must_fail", test_modbus_response_params)
 def test_parse_modbus_response(lib, function, modrequest, response, must_fail):
     if must_fail:
-        with pytest.raises(Exception):
+        with pytest.raises(exceptions.ModbusParseError):
             main.parse_modbus_response(lib, function, modrequest, response)
     else:
         main.parse_modbus_response(lib, function, modrequest, response)
+
+
+def test_handle_rpcumodbusparseerror():
+    """the handler reports modbus_message as raw bytes, it must not decode it again"""
+    error = exceptions.ModbusParseError(bytearray.fromhex("160402fe348c80"))
+
+    assert main.handle_rpcumodbusparseerror(error) == main.ResultCode.OPERATION_ERROR
 
 
 test_argv_params_positive = [

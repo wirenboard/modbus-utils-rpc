@@ -11,7 +11,10 @@ class RPCClientTimeoutError(Exception):
 
 
 class ModbusParseError(Exception):
-    """Rises if umodbus rises an exception after parse response attempt"""
+    """Rises if umodbus rises an exception after parse response attempt
+
+    modbus_message holds the raw response bytes, not a hex string
+    """
 
     def __init__(self, modbus_message):
         self.modbus_message = modbus_message

@@ -9,7 +9,7 @@ import umodbus.exceptions
 from mqttrpc import client as rpcclient
 from umodbus import functions
 from umodbus.client import tcp
-from umodbus.client.serial import rtu
+from umodbus.client.serial import redundancy_check, rtu
 from wb_common.mqtt_client import DEFAULT_BROKER_URL, MQTTClient
 
 from modbus_client_rpc import exceptions
@@ -149,15 +149,15 @@ def mqtt_client(name, broker):
         client.stop()
 
 
-def send_message(args, broker, message, timeout):
+def send_message(args, broker, message, timeout_ms):
     with mqtt_client("modbus-client-rpc", broker) as client:
         try:
             rpc_client = rpcclient.TMQTTRPCClient(client)
             client.on_message = rpc_client.on_mqtt_message
 
-            logger.debug("RPC Client -> %s (%d timeout ms)", message, timeout)
+            logger.debug("RPC Client -> %s (%d timeout ms)", message, timeout_ms)
             # RPC Client accepts timeout in seconds
-            response = rpc_client.call("wb-mqtt-serial", "port", "Load", message, timeout / 1000)
+            response = rpc_client.call("wb-mqtt-serial", "port", "Load", message, timeout_ms / 1000)
             logger.debug("RPC Client <- %s", response)
 
         except rpcclient.TimeoutError as error:
@@ -180,11 +180,11 @@ def parse_rpc_response(response):
 
 def parse_modbus_response(lib, function, request, response):
 
+    response_byte = bytearray.fromhex(response)
+
+    logger.debug("%s", "".join(f"<{x:02x}>" for x in response_byte))
+
     try:
-        response_byte = bytearray.fromhex(response)
-
-        logger.debug("%s", "".join(f"<{x:02x}>" for x in response_byte))
-
         data = lib.parse_response_adu(response_byte, bytearray.fromhex(request))
 
         if function in (functions.READ_COILS, functions.READ_DISCRETE_INPUTS):
@@ -202,7 +202,7 @@ def parse_modbus_response(lib, function, request, response):
         else:
             print("SUCCESS: Coils/Registers written:", data)
 
-    except (struct.error, umodbus.exceptions.ModbusError) as error:
+    except (struct.error, umodbus.exceptions.ModbusError, redundancy_check.CRCError) as error:
         raise exceptions.ModbusParseError(response_byte) from error
 
 
@@ -229,7 +229,7 @@ def handle_rpcclienttimeouterror(timeout):
 
 def handle_rpcumodbusparseerror(error):
     logger.error("Error occurred while parsing modbus response:")
-    logger.error("%s", "".join(f"[{x:02x}]" for x in bytearray.fromhex(error.modbus_message)))
+    logger.error("%s", "".join(f"[{x:02x}]" for x in error.modbus_message))
     return ResultCode.OPERATION_ERROR
 
 
@@ -287,7 +287,7 @@ def process_request(args, lib, get_port_params):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--debug",
         help="Enable debug output",

@@ -57,27 +57,27 @@ def create_rpc_request(  # pylint:disable=too-many-arguments,too-many-positional
 
 
 def start_scan(  # pylint:disable=too-many-arguments,too-many-positional-arguments
-    serial_port, bd, parity, rpc_client, timeout, response_timeout=None
+    serial_port, bd, parity, rpc_client, timeout_ms, response_timeout=None
 ):
     """Send broadcast command FD600198, where 60 01 - command and start scan subcommand for WB Devices"""
-    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout, response_timeout)
+    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600109F0", timeout_ms, response_timeout)
     logger.debug("Scan init")
-    logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
-    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
+    logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout_ms)
+    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout_ms / 1000)
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
     return bytearray.fromhex(remove_substring_prefix("ff", modbus_response))
 
 
 def continue_scan(  # pylint:disable=too-many-arguments,too-many-positional-arguments
-    serial_port, bd, parity, rpc_client, timeout, response_timeout=None
+    serial_port, bd, parity, rpc_client, timeout_ms, response_timeout=None
 ):
     """Send 60 command and 02 subcommand for scan continue.
     Devices respond sequentially with subcommand 03 on every 02 subcommand.
     If not a single unasked device left, first device respond with 04 subcommand"""
-    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout, response_timeout)
+    rpc_request = create_rpc_request(serial_port, bd, parity, "FD600249F1", timeout_ms, response_timeout)
     logger.debug("Scan next")
-    logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout)
-    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout)
+    logger.debug("RPC Client -> %s, %d ms", rpc_request, timeout_ms)
+    rpc_response = rpc_client.call("wb-mqtt-serial", "port", "Load", rpc_request, timeout_ms / 1000)
     logger.debug("RPC Client <- %s", rpc_response)
 
     modbus_response = modbus_client.parse_rpc_response(rpc_response)
@@ -144,7 +144,7 @@ def scan_bus(args, bd, parity):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--debug",
         help="Enable debug output",
