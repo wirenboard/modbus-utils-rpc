@@ -12,7 +12,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-mqttrpc (>=1.1.2),
                python3-pytest <!nocheck>,
                python3-pytest-mock <!nocheck>
-Standards-Version: 3.9.1
+Standards-Version: 4.5.1
 Homepage: https://github.com/wirenboard/modbus-utils-rpc
 
 Package: modbus-utils-rpc

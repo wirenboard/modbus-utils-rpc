@@ -18,5 +18,6 @@ setup(
     description="Wiren Board modbus utility using RPC",
     url="https://github.com/wirenboard/modbus-utils-rpc",
     packages=["modbus_client_rpc", "modbus_scanner_rpc"],
+    scripts=["bin/modbus_client_rpc", "bin/modbus_scanner_rpc"],
     license="MIT",
 )
