@@ -323,8 +323,8 @@ def test_send_message(mocker, send_message_context):
 
         return expected_response
 
-    def test_connect(self, ip, port):
-        assert ip == "127.0.0.1" and port == 1883
+    def test_connect(self, host, port):
+        assert host == "127.0.0.1" and port == 1883
 
     mocker.patch("modbus_client_rpc.main.rpcclient.TMQTTRPCClient.call", test_rpc_call)
 
