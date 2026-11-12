@@ -19,5 +19,5 @@ setup(
     url="https://github.com/wirenboard/modbus-utils-rpc",
     packages=["modbus_client_rpc", "modbus_scanner_rpc"],
     scripts=["bin/modbus_client_rpc", "bin/modbus_scanner_rpc"],
-    license="MIT",
+    license="MIT-WB",
 )
